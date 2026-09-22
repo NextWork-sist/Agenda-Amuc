@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda AMUC - Clientes</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark small">AMUC</div>
+        <div><strong>Agenda AMUC</strong><span id="userRole">Usuario</span></div>
+      </div>
+      <nav class="nav-menu">
+        <a href="dashboard.html">Inicio</a>
+        <a href="reservas.html">Reservas</a>
+        <a href="clientes.html" class="active">Clientes</a>
+        <a href="pagos.html">Cobros</a>
+      </nav>
+      <button id="logoutBtn" class="btn btn-ghost">Cerrar sesión</button>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div><h1>Clientes</h1><p>Registro de responsables de cada evento.</p></div>
+        <button id="toggleFormBtn" class="btn btn-primary">Nuevo cliente</button>
+      </header>
+
+      <section id="clienteFormPanel" class="panel hidden">
+        <form id="clienteForm" class="form-grid">
+          <label>Nombre<input type="text" id="nombre" required></label>
+          <label>Apellido<input type="text" id="apellido"></label>
+          <label>DNI / CUIT<input type="text" id="dni"></label>
+          <label>Teléfono<input type="text" id="telefono"></label>
+          <label>Email<input type="email" id="email"></label>
+          <label>Dirección<input type="text" id="direccion"></label>
+          <label class="full">Observaciones<textarea id="observaciones" rows="3"></textarea></label>
+          <div class="full form-actions">
+            <button type="submit" class="btn btn-primary">Guardar cliente</button>
+            <span id="clienteMessage" class="form-message"></span>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header"><h2>Clientes registrados</h2></div>
+        <div id="clientesTable" class="table-wrap"><p class="muted">Cargando...</p></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="../js/supabase.js"></script>
+  <script src="../js/session.js"></script>
+  <script src="../js/clientes.js"></script>
+</body>
+</html>
