@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda AMUC - Dashboard</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-mark small">AMUC</div><div><strong>Agenda AMUC</strong><span id="userRole">Usuario</span></div></div>
+    <nav class="nav-menu">
+      <a href="dashboard.html" class="active">Inicio</a>
+      <a href="reservas.html">Reservas</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="pagos.html">Cobros</a>
+    </nav>
+    <button id="logoutBtn" class="btn btn-ghost">Cerrar sesión</button>
+  </aside>
+  <main class="content">
+    <header class="topbar"><div><h1>Panel general</h1><p id="welcomeText">Cargando...</p></div></header>
+    <section class="stats-grid">
+      <article class="stat-card"><span>Reservas</span><strong id="statReservas">—</strong><small>Total registradas</small></article>
+      <article class="stat-card"><span>Clientes</span><strong id="statClientes">—</strong><small>Clientes registrados</small></article>
+      <article class="stat-card"><span>Total reservado</span><strong id="statTotalReservado">$ 0</strong><small>Valor de eventos</small></article>
+      <article class="stat-card"><span>Total cobrado</span><strong id="statCobrado">$ 0</strong><small>Pagos registrados</small></article>
+    </section>
+    <section class="panel">
+      <div class="panel-header"><div><h2>Próximas reservas</h2><p>Eventos próximos según la fecha registrada.</p></div></div>
+      <div id="proximasReservas" class="table-wrap"><p class="muted">Cargando...</p></div>
+    </section>
+  </main>
+</div>
+<script src="../js/supabase.js"></script>
+<script src="../js/session.js"></script>
+<script src="../js/dashboard.js"></script>
+</body>
+</html>
