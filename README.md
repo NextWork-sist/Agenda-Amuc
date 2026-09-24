@@ -47,3 +47,23 @@ Al guardar una reserva:
 - En navegadores sin soporte para compartir archivos, se pueden descargar ambos PDF y se ofrecen accesos a WhatsApp/correo para preparar el mensaje.
 
 No requiere cambios nuevos en Supabase.
+
+
+## V9 - Correcciones
+
+1. Reservas:
+   - Se corrigió el botón Eliminar.
+   - Solo funciona para perfiles ADMINISTRADOR.
+   - Solicita confirmación antes de borrar.
+   - Los pagos asociados se eliminan por la relación ON DELETE CASCADE ya existente.
+
+2. Ficha del salón:
+   - Los datos completados automáticamente se imprimen 1 punto más grandes.
+
+3. Ingreso y egreso:
+   - Ingreso = 30 minutos antes del comienzo contratado.
+   - Egreso = 30 minutos después del final contratado.
+   - El cálculo ajusta automáticamente la fecha si se cruza la medianoche.
+   - Ejemplo: alquiler 21:00 a 05:00 -> ingreso 20:30 / egreso 05:30 del día siguiente.
+
+No requiere un SQL nuevo si ya se ejecutó `actualizacion_supabase_v4.sql`.
