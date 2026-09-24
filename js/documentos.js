@@ -36,6 +36,48 @@ async function fetchFile(url,nombre){
   return new File([blob], nombre, {type:'application/pdf'});
 }
 
+
+function parseFechaHoraLocal(fechaISO,hora){
+  const [y,m,d] = fechaISO.split('-').map(Number);
+  const [hh,mm] = hora.slice(0,5).split(':').map(Number);
+  return new Date(y,m-1,d,hh,mm,0,0);
+}
+
+function fechaISOLocal(date){
+  return [
+    date.getFullYear(),
+    String(date.getMonth()+1).padStart(2,'0'),
+    String(date.getDate()).padStart(2,'0')
+  ].join('-');
+}
+
+function horaLocal(date){
+  return [
+    String(date.getHours()).padStart(2,'0'),
+    String(date.getMinutes()).padStart(2,'0')
+  ].join(':');
+}
+
+function calcularIngresoEgreso(reserva){
+  const inicio = parseFechaHoraLocal(reserva.fecha,reserva.hora_inicio);
+  let fin = parseFechaHoraLocal(reserva.fecha,reserva.hora_fin);
+
+  // Si finaliza a la misma hora o antes, el evento cruza medianoche.
+  if(fin <= inicio){
+    fin.setDate(fin.getDate()+1);
+  }
+
+  const ingreso = new Date(inicio.getTime() - 30*60*1000);
+  const egreso = new Date(fin.getTime() + 30*60*1000);
+
+  return {
+    ingresoFecha: fechaISOLocal(ingreso),
+    ingresoHora: horaLocal(ingreso),
+    egresoFecha: fechaISOLocal(egreso),
+    egresoHora: horaLocal(egreso)
+  };
+}
+
 async function crearFichaReservaPDF(reserva,cliente){
   const template = await fetch('../assets/documentos/salon_fiestas_ficha.pdf').then(r=>r.arrayBuffer());
   const pdfDoc = await PDFLib.PDFDocument.load(template);
@@ -43,11 +85,11 @@ async function crearFichaReservaPDF(reserva,cliente){
   const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
   const {height} = page.getSize();
 
-  const drawTop = (x,top,text,size=8.5,maxWidth=null)=>{
+  const drawTop = (x,top,text,size=9.5,maxWidth=null)=>{
     let value = String(text ?? '');
     let fontSize = size;
     if(maxWidth){
-      while(fontSize > 6 && font.widthOfTextAtSize(value,fontSize) > maxWidth){
+      while(fontSize > 7 && font.widthOfTextAtSize(value,fontSize) > maxWidth){
         fontSize -= 0.25;
       }
     }
@@ -60,24 +102,28 @@ async function crearFichaReservaPDF(reserva,cliente){
     });
   };
 
-  const ingresoFecha = reserva.fecha;
-  const egresoFecha = fechaEgresoReserva(reserva);
+  const {
+    ingresoFecha,
+    ingresoHora,
+    egresoFecha,
+    egresoHora
+  } = calcularIngresoEgreso(reserva);
 
-  drawTop(148,145,docFechaAR(reserva.fecha),8.5,92);
-  drawTop(286,145,`${reserva.hora_inicio?.slice(0,5)||''} a ${reserva.hora_fin?.slice(0,5)||''}`,8.5,80);
-  drawTop(452,145,String(reserva.cantidad_horas ?? ''),8.5,55);
-  drawTop(107,158,reserva.tipo_evento || '',8.5,405);
+  drawTop(148,145,docFechaAR(reserva.fecha),9.5,92);
+  drawTop(286,145,`${reserva.hora_inicio?.slice(0,5)||''} a ${reserva.hora_fin?.slice(0,5)||''}`,9.5,80);
+  drawTop(452,145,String(reserva.cantidad_horas ?? ''),9.5,55);
+  drawTop(107,158,reserva.tipo_evento || '',9.5,405);
 
-  drawTop(168,279,nombreCompletoCliente(cliente),8.5,335);
-  drawTop(105,294,cliente?.dni || '',8.5,150);
-  drawTop(317,294,cliente?.telefono || '',8.5,170);
-  drawTop(168,324,cliente?.email || '',8.5,330);
+  drawTop(168,279,nombreCompletoCliente(cliente),9.5,335);
+  drawTop(105,294,cliente?.dni || '',9.5,150);
+  drawTop(317,294,cliente?.telefono || '',9.5,170);
+  drawTop(168,324,cliente?.email || '',9.5,330);
 
-  drawTop(106,540,docFechaAR(ingresoFecha),8.5,150);
-  drawTop(319,540,reserva.hora_inicio?.slice(0,5) || '',8.5,120);
+  drawTop(106,540,docFechaAR(ingresoFecha),9.5,150);
+  drawTop(319,540,ingresoHora,9.5,120);
 
-  drawTop(106,651,docFechaAR(egresoFecha),8.5,150);
-  drawTop(319,651,reserva.hora_fin?.slice(0,5) || '',8.5,120);
+  drawTop(106,651,docFechaAR(egresoFecha),9.5,150);
+  drawTop(319,651,egresoHora,9.5,120);
 
   const bytes = await pdfDoc.save();
   return new File(

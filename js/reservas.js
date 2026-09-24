@@ -228,5 +228,59 @@ async function loadReservas(){
   if(error){b.innerHTML=`<p class="error">${error.message}</p>`;return;}
   if(!data?.length){b.innerHTML='<p class="muted">Sin reservas.</p>';return;}
   const esAdmin=perfilActual?.rol==='ADMINISTRADOR';
-  b.innerHTML=`<table><thead><tr><th>Fecha</th><th>Cliente</th><th>Condición</th><th>Evento</th><th>Horario</th><th>Horas</th><th>Estado</th><th>Total</th>${esAdmin?'<th>Acción</th>':''}</tr></thead><tbody>${data.map(r=>`<tr><td>${fd(r.fecha)}</td><td>${r.clientes?`${r.clientes.nombre||''} ${r.clientes.apellido||''}`:'-'}</td><td>${r.tipo_usuario==='AFILIADO'?'Afiliado':'No afiliado'}</td><td>${r.tipo_evento||'-'}</td><td>${r.hora_inicio?r.hora_inicio.slice(0,5):'-'} / ${r.hora_fin?r.hora_fin.slice(0,5):'-'}</td><td>${r.cantidad_horas||0}</td><td>${r.estado}</td><td>${money(r.valor_total)}</td>${esAdmin?`<td><button class="icon-btn danger" onclick="borrarReserva(${r.id})" title="Eliminar reserva">🗑</button></td>`:''}</tr>`).join('')}</tbody></table>`;
+  b.innerHTML=`<table><thead><tr><th>Fecha</th><th>Cliente</th><th>Condición</th><th>Evento</th><th>Horario</th><th>Horas</th><th>Estado</th><th>Total</th>${esAdmin?'<th>Acción</th>':''}</tr></thead><tbody>${data.map(r=>`<tr><td>${fd(r.fecha)}</td><td>${r.clientes?`${r.clientes.nombre||''} ${r.clientes.apellido||''}`:'-'}</td><td>${r.tipo_usuario==='AFILIADO'?'Afiliado':'No afiliado'}</td><td>${r.tipo_evento||'-'}</td><td>${r.hora_inicio?r.hora_inicio.slice(0,5):'-'} / ${r.hora_fin?r.hora_fin.slice(0,5):'-'}</td><td>${r.cantidad_horas||0}</td><td>${r.estado}</td><td>${money(r.valor_total)}</td>${esAdmin?`<td><button type="button" class="icon-btn danger delete-reserva-btn" data-id="${r.id}" title="Eliminar reserva">🗑</button></td>`:''}</tr>`).join('')}</tbody></table>`;
+
+  if(esAdmin){
+    b.querySelectorAll('.delete-reserva-btn').forEach(btn=>{
+      btn.addEventListener('click', async (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const id = Number(btn.dataset.id);
+        await borrarReserva(id);
+      });
+    });
+  }
+}
+
+
+async function borrarReserva(id){
+  if(perfilActual?.rol !== 'ADMINISTRADOR'){
+    alert('Solo un administrador puede eliminar reservas.');
+    return;
+  }
+
+  const confirmar = window.confirm(
+    '¿Está seguro de eliminar esta reserva? Los cobros asociados también serán eliminados. Esta acción no se puede deshacer.'
+  );
+  if(!confirmar) return;
+
+  const btn = document.querySelector(`.delete-reserva-btn[data-id="${id}"]`);
+  if(btn){
+    btn.disabled = true;
+    btn.textContent = '…';
+  }
+
+  const {error} = await supabaseClient
+    .from('reservas')
+    .delete()
+    .eq('id', id);
+
+  if(error){
+    if(btn){
+      btn.disabled = false;
+      btn.textContent = '🗑';
+    }
+    alert('No se pudo eliminar la reserva: ' + error.message);
+    return;
+  }
+
+  if(typeof documentacionActual !== 'undefined' &&
+     documentacionActual?.reserva?.id === id){
+    documentacionActual = null;
+    document.getElementById('documentosReservaPanel')?.classList.add('hidden');
+  }
+
+  alert('Reserva eliminada correctamente.');
+  await loadReservas();
+  await verificarDisponibilidadVisual();
 }

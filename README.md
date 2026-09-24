@@ -67,3 +67,13 @@ No requiere cambios nuevos en Supabase.
    - Ejemplo: alquiler 21:00 a 05:00 -> ingreso 20:30 / egreso 05:30 del día siguiente.
 
 No requiere un SQL nuevo si ya se ejecutó `actualizacion_supabase_v4.sql`.
+
+
+## V10 - Corrección botón eliminar reservas
+
+- Se eliminó el `onclick` embebido del botón de papelera.
+- Cada botón se vincula ahora mediante `addEventListener` después de renderizar la tabla.
+- Se agrega confirmación, estado visual durante el borrado y aviso de éxito/error.
+- Sigue restringido exclusivamente al rol ADMINISTRADOR.
+
+No requiere SQL nuevo si ya se ejecutó la política de borrado de V4.
