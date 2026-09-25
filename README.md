@@ -77,3 +77,12 @@ No requiere un SQL nuevo si ya se ejecutó `actualizacion_supabase_v4.sql`.
 - Sigue restringido exclusivamente al rol ADMINISTRADOR.
 
 No requiere SQL nuevo si ya se ejecutó la política de borrado de V4.
+
+
+## V11 - Solicitudes WhatsApp
+- Nueva pestaña Solicitudes WhatsApp.
+- Estados: Pendiente, En revisión, Convertida y Descartada.
+- Acciones: Tomar, Ver conversación, Crear reserva y Descartar.
+- Crear reserva lleva los datos disponibles a la pantalla de Reservas.
+- Dashboard muestra cantidad de solicitudes pendientes.
+- Usa las tablas WhatsApp ya creadas en Supabase. No requiere SQL nuevo.

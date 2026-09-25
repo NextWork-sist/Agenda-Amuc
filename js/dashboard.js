@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('statReservas').textContent=reservasGlobal.length;
   document.getElementById('statClientes').textContent=(cl||[]).length;
   document.getElementById('statTotalReservado').textContent=money(reservasGlobal.reduce((s,x)=>s+Number(x.valor_total||0),0));
-  document.getElementById('statCobrado').textContent=money(ps.reduce((s,x)=>s+Number(x.importe||0),0));
+  document.getElementById('statCobrado').textContent=money(ps.reduce((s,x)=>s+Number(x.importe||0),0));supabaseClient.from('whatsapp_solicitudes').select('id',{count:'exact',head:true}).eq('estado','PENDIENTE').then(({count})=>{const e=document.getElementById('statWhatsappPendientes');if(e)e.textContent=count||0;});
 
   document.getElementById('prevMonthBtn').onclick=()=>{currentCalendarDate=new Date(currentCalendarDate.getFullYear(),currentCalendarDate.getMonth()-1,1);renderCalendar()};
   document.getElementById('nextMonthBtn').onclick=()=>{currentCalendarDate=new Date(currentCalendarDate.getFullYear(),currentCalendarDate.getMonth()+1,1);renderCalendar()};

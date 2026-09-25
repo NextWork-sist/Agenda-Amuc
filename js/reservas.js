@@ -106,6 +106,24 @@ async function verificarDisponibilidadVisual(){
   }
 }
 
+
+async function cargarSolicitudWhatsappEnReserva(){
+  const raw=sessionStorage.getItem('agenda_amuc_whatsapp_solicitud');if(!raw)return;
+  let s;try{s=JSON.parse(raw);}catch{return;}
+  document.getElementById('reservaFormPanel')?.classList.remove('hidden');
+  if(s.cliente_id){
+    const {data:c}=await supabaseClient.from('clientes').select('*').eq('id',s.cliente_id).single();
+    if(c){seleccionarCliente(c);document.getElementById('reservaDatosPanel')?.classList.remove('hidden');}
+  }else{
+    document.getElementById('nuevoClientePanel')?.classList.remove('hidden');
+    if(document.getElementById('nc_dni'))document.getElementById('nc_dni').value=s.dni||'';
+    if(document.getElementById('nc_telefono'))document.getElementById('nc_telefono').value=s.telefono||'';
+    if(document.getElementById('nc_email'))document.getElementById('nc_email').value=s.email||'';
+    if(document.getElementById('nc_afiliado'))document.getElementById('nc_afiliado').checked=s.afiliado===true;
+  }
+  if(fecha)fecha.value=s.fecha_evento||'';if(hora_inicio)hora_inicio.value=(s.hora_inicio||'').slice(0,5);if(hora_fin)hora_fin.value=(s.hora_fin||'').slice(0,5);if(tipo_evento)tipo_evento.value=s.tipo_evento||'';if(cantidad_personas)cantidad_personas.value=s.cantidad_personas||'';
+}
+
 document.addEventListener('DOMContentLoaded',async()=>{
   const c=await requireSession();if(!c)return;perfilActual=c.perfil;
   document.getElementById('toggleFormBtn').onclick=()=>document.getElementById('reservaFormPanel').classList.toggle('hidden');
@@ -220,6 +238,7 @@ async function guardarReserva(e){
   const reservaGuardada={...p,id:nuevaReserva.id};
   mostrarDocumentosReserva(reservaGuardada,{...clienteActual});
   await loadReservas();
+  await cargarSolicitudWhatsappEnReserva();
 }
 
 async function loadReservas(){
