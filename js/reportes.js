@@ -477,7 +477,6 @@ async function generarPDFReporte(ventanaPdf=null){
     head:[['Indicador','Resultado']],
     body:[
       ['Cantidad de alquileres',String(reporte.reservas.length)],
-      ['Total contratado',money(totalContratado)],
       ['Total cobrado',money(totalCobrado)],
       ['Saldo pendiente',money(saldoPendiente)],
     ],
@@ -516,28 +515,7 @@ async function generarPDFReporte(ventanaPdf=null){
     columnStyles:{1:{halign:'right'},2:{halign:'right'}},
   });
 
-  // Incorporar los gráficos visibles si están disponibles.
-  try{
-    const alquilerCanvas=document.getElementById('alquileresChart');
-    const recCanvas=document.getElementById('recaudacionChart');
-    const mediosCanvas=document.getElementById('mediosChart');
-    const charts=[
-      ['Alquileres por mes',alquilerCanvas],
-      ['Recaudación por mes',recCanvas],
-      ['Distribución por medio de pago',mediosCanvas],
-    ];
-    for(const [titulo,canvas] of charts){
-      if(!canvas)continue;
-      const img=canvas.toDataURL('image/png',1.0);
-      doc.addPage();
-      encabezado();
-      doc.setFont('helvetica','bold');doc.setFontSize(12);
-      doc.text(titulo,margin,40);
-      const maxW=pageW-margin*2;
-      const maxH=115;
-      doc.addImage(img,'PNG',margin,46,maxW,maxH);
-    }
-  }catch(err){console.warn('No se pudieron incorporar gráficos al PDF',err);}
+  // El PDF se mantiene compacto: resumen general + detalle de cobros.
 
   doc.addPage();
   encabezado();

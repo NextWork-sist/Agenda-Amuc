@@ -101,3 +101,11 @@ Incluye:
 - tabla de movimientos;
 - exportación CSV.
 No requiere cambios en Supabase para esta versión.
+
+
+## Ajuste PDF v2
+El reporte PDF quedó reducido a:
+- Página 1: Resumen general con Cantidad de alquileres, Total cobrado y Saldo pendiente.
+- Página siguiente: Detalle de cobros.
+Se eliminaron del PDF las tres páginas de gráficos.
+Los gráficos continúan visibles dentro de la pestaña Reportes del sistema.
