@@ -141,3 +141,18 @@ Se incorporaron:
 El botón Compartir archivos ahora prepara 4 PDF: ficha, reglamento, lista de invitados y notificación.
 La firma del responsable en la notificación queda libre.
 La hora de ingreso se calcula 30 minutos antes del horario de inicio, igual que en la ficha.
+
+
+## V16 - Legajo digital por reserva
+Se agregó documentación adjunta permanente para cada evento:
+- Ficha
+- Reglamento
+- Notificación
+- Lista de invitados
+
+Acepta PDF, JPG/JPEG y PNG, hasta 10 MB por archivo.
+Cada documento queda vinculado al ID de la reserva en `reserva_documentos` y almacenado en el bucket privado `documentos-reservas`.
+Desde la lista de reservas se agregó el botón "Documentos", que permite abrir el legajo de cualquier evento.
+Cada tipo muestra estado Pendiente / Adjuntado y permite Ver / Reemplazar.
+
+Antes de usar esta versión ejecutar `supabase_documentos_policies.sql` en Supabase producción.

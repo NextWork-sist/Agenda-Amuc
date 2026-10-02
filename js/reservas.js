@@ -242,12 +242,20 @@ async function guardarReserva(e){
 }
 
 async function loadReservas(){
-  const{data,error}=await supabaseClient.from('reservas').select('id,fecha,hora_inicio,hora_fin,tipo_evento,cantidad_personas,valor_total,estado,tipo_usuario,cantidad_horas,clientes(nombre,apellido)').order('fecha',{ascending:false});
+  const{data,error}=await supabaseClient.from('reservas').select('id,fecha,hora_inicio,hora_fin,tipo_evento,cantidad_personas,valor_total,estado,tipo_usuario,cantidad_horas,clientes(id,nombre,apellido,dni,telefono,email)').order('fecha',{ascending:false});
   const b=document.getElementById('reservasTable');
   if(error){b.innerHTML=`<p class="error">${error.message}</p>`;return;}
   if(!data?.length){b.innerHTML='<p class="muted">Sin reservas.</p>';return;}
   const esAdmin=perfilActual?.rol==='ADMINISTRADOR';
-  b.innerHTML=`<table><thead><tr><th>Fecha</th><th>Cliente</th><th>Condición</th><th>Evento</th><th>Horario</th><th>Horas</th><th>Estado</th><th>Total</th>${esAdmin?'<th>Acción</th>':''}</tr></thead><tbody>${data.map(r=>`<tr><td>${fd(r.fecha)}</td><td>${r.clientes?`${r.clientes.nombre||''} ${r.clientes.apellido||''}`:'-'}</td><td>${r.tipo_usuario==='AFILIADO'?'Afiliado':'No afiliado'}</td><td>${r.tipo_evento||'-'}</td><td>${r.hora_inicio?r.hora_inicio.slice(0,5):'-'} / ${r.hora_fin?r.hora_fin.slice(0,5):'-'}</td><td>${r.cantidad_horas||0}</td><td>${r.estado}</td><td>${money(r.valor_total)}</td>${esAdmin?`<td><button type="button" class="icon-btn danger delete-reserva-btn" data-id="${r.id}" title="Eliminar reserva">🗑</button></td>`:''}</tr>`).join('')}</tbody></table>`;
+  b.innerHTML=`<table><thead><tr><th>Fecha</th><th>Cliente</th><th>Condición</th><th>Evento</th><th>Horario</th><th>Horas</th><th>Estado</th><th>Total</th><th>Documentación</th>${esAdmin?'<th>Acción</th>':''}</tr></thead><tbody>${data.map(r=>`<tr><td>${fd(r.fecha)}</td><td>${r.clientes?`${r.clientes.nombre||''} ${r.clientes.apellido||''}`:'-'}</td><td>${r.tipo_usuario==='AFILIADO'?'Afiliado':'No afiliado'}</td><td>${r.tipo_evento||'-'}</td><td>${r.hora_inicio?r.hora_inicio.slice(0,5):'-'} / ${r.hora_fin?r.hora_fin.slice(0,5):'-'}</td><td>${r.cantidad_horas||0}</td><td>${r.estado}</td><td>${money(r.valor_total)}</td><td><button type="button" class="btn btn-small btn-secondary docs-reserva-btn" data-id="${r.id}">📎 Documentos</button></td>${esAdmin?`<td><button type="button" class="icon-btn danger delete-reserva-btn" data-id="${r.id}" title="Eliminar reserva">🗑</button></td>`:''}</tr>`).join('')}</tbody></table>`;
+
+  b.querySelectorAll('.docs-reserva-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const r=data.find(x=>String(x.id)===String(btn.dataset.id));
+      if(!r)return;
+      mostrarDocumentosReserva(r,r.clientes||{});
+    });
+  });
 
   if(esAdmin){
     b.querySelectorAll('.delete-reserva-btn').forEach(btn=>{

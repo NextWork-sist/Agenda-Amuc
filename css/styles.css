@@ -174,3 +174,55 @@ table td small{display:block;color:var(--muted);margin-top:4px}
     grid-template-columns:1fr;
   }
 }
+
+
+/* V16 - Legajo digital de cada reserva */
+.documentos-adjuntos-section{
+  margin-top:22px;
+  padding-top:18px;
+  border-top:1px solid var(--border);
+}
+.documentos-adjuntos-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.doc-upload-card{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:center;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px;
+  background:#fff;
+}
+.doc-upload-card.uploaded{
+  border-color:#9ccdb0;
+  background:#f7fcf9;
+}
+.doc-upload-card.pending{
+  border-color:#e1c67d;
+  background:#fffaf0;
+}
+.doc-upload-info span,
+.doc-upload-info strong,
+.doc-upload-info small{
+  display:block;
+}
+.doc-upload-info small{
+  margin-top:4px;
+  color:var(--muted);
+  overflow-wrap:anywhere;
+}
+.doc-upload-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+@media(max-width:760px){
+  .documentos-adjuntos-grid{grid-template-columns:1fr}
+  .doc-upload-card{align-items:flex-start;flex-direction:column}
+  .doc-upload-actions{justify-content:flex-start}
+}

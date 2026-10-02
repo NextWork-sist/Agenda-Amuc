@@ -1,6 +1,32 @@
 
 let documentacionActual = null;
 
+const DOCUMENTOS_BUCKET = 'documentos-reservas';
+const TIPOS_DOCUMENTO = {
+  FICHA: 'Ficha',
+  REGLAMENTO: 'Reglamento',
+  NOTIFICACION: 'Notificación',
+  LISTA_INVITADOS: 'Lista de invitados'
+};
+
+function escDoc(v=''){
+  return String(v)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#039;');
+}
+
+function slugArchivo(nombre='archivo'){
+  return String(nombre)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-zA-Z0-9._-]+/g,'_')
+    .replace(/_+/g,'_')
+    .slice(0,120);
+}
+
+
 function docFechaAR(fechaISO){
   if(!fechaISO) return '';
   const [y,m,d] = fechaISO.split('-');
@@ -310,6 +336,171 @@ function correoReserva(){
   window.location.href=`mailto:${encodeURIComponent(to)}?subject=${subject}&body=${body}`;
 }
 
+
+async function cargarDocumentosAdjuntos(){
+  const reservaId=documentacionActual?.reserva?.id;
+  const box=document.getElementById('documentosAdjuntosLista');
+  if(!reservaId || !box) return;
+
+  box.innerHTML='<p class="muted">Cargando documentación adjunta...</p>';
+
+  const {data,error}=await supabaseClient
+    .from('reserva_documentos')
+    .select('id,reserva_id,tipo_documento,nombre_archivo,ruta_storage,created_at,updated_at')
+    .eq('reserva_id',reservaId)
+    .order('tipo_documento');
+
+  if(error){
+    box.innerHTML=`<p class="error">No se pudo cargar la documentación adjunta: ${escDoc(error.message)}</p>`;
+    return;
+  }
+
+  const mapa={};
+  (data||[]).forEach(d=>mapa[d.tipo_documento]=d);
+
+  const orden=['FICHA','REGLAMENTO','NOTIFICACION','LISTA_INVITADOS'];
+
+  box.innerHTML=orden.map(tipo=>{
+    const d=mapa[tipo];
+    return `
+      <div class="doc-upload-card ${d?'uploaded':'pending'}">
+        <div class="doc-upload-info">
+          <span class="eyebrow">${escDoc(TIPOS_DOCUMENTO[tipo])}</span>
+          <strong>${d?'Adjuntado':'Pendiente'}</strong>
+          <small>${d?escDoc(d.nombre_archivo):'PDF, JPG, JPEG o PNG'}</small>
+        </div>
+        <div class="doc-upload-actions">
+          ${d?`<button type="button" class="btn btn-small btn-secondary doc-ver-btn" data-tipo="${tipo}">Ver</button>`:''}
+          <button type="button" class="btn btn-small ${d?'btn-secondary':'btn-primary'} doc-cargar-btn" data-tipo="${tipo}">
+            ${d?'Reemplazar':'Cargar'}
+          </button>
+          <input
+            type="file"
+            class="hidden doc-file-input"
+            data-tipo="${tipo}"
+            accept="application/pdf,image/jpeg,image/png"
+          >
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  box.querySelectorAll('.doc-cargar-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      box.querySelector(`.doc-file-input[data-tipo="${btn.dataset.tipo}"]`)?.click();
+    });
+  });
+
+  box.querySelectorAll('.doc-file-input').forEach(input=>{
+    input.addEventListener('change',async()=>{
+      const file=input.files?.[0];
+      if(!file) return;
+      await subirDocumentoReserva(input.dataset.tipo,file,mapa[input.dataset.tipo]||null);
+      input.value='';
+    });
+  });
+
+  box.querySelectorAll('.doc-ver-btn').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      const d=mapa[btn.dataset.tipo];
+      if(d) await verDocumentoAdjunto(d);
+    });
+  });
+}
+
+async function subirDocumentoReserva(tipo,file,existente=null){
+  const reservaId=documentacionActual?.reserva?.id;
+  if(!reservaId){
+    alert('Primero debe existir una reserva guardada.');
+    return;
+  }
+
+  const permitidos=['application/pdf','image/jpeg','image/png'];
+  if(!permitidos.includes(file.type)){
+    alert('Formato no permitido. Utilizá PDF, JPG, JPEG o PNG.');
+    return;
+  }
+
+  const maxBytes=10*1024*1024;
+  if(file.size>maxBytes){
+    alert('El archivo supera el máximo de 10 MB.');
+    return;
+  }
+
+  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+  const nombreSeguro=slugArchivo(file.name||'documento');
+  const ruta=`reserva_${reservaId}/${tipo.toLowerCase()}/${stamp}_${nombreSeguro}`;
+
+  const confirmar=existente
+    ? confirm(`Ya existe ${TIPOS_DOCUMENTO[tipo]}. ¿Desea reemplazarlo?`)
+    : true;
+  if(!confirmar) return;
+
+  const {error:uploadError}=await supabaseClient.storage
+    .from(DOCUMENTOS_BUCKET)
+    .upload(ruta,file,{
+      cacheControl:'3600',
+      upsert:false,
+      contentType:file.type
+    });
+
+  if(uploadError){
+    alert('No se pudo cargar el archivo: '+uploadError.message);
+    return;
+  }
+
+  let dbError=null;
+
+  if(existente){
+    const {error}=await supabaseClient
+      .from('reserva_documentos')
+      .update({
+        nombre_archivo:file.name,
+        ruta_storage:ruta,
+        updated_at:new Date().toISOString()
+      })
+      .eq('id',existente.id);
+    dbError=error;
+  }else{
+    const {error}=await supabaseClient
+      .from('reserva_documentos')
+      .insert({
+        reserva_id:reservaId,
+        tipo_documento:tipo,
+        nombre_archivo:file.name,
+        ruta_storage:ruta
+      });
+    dbError=error;
+  }
+
+  if(dbError){
+    await supabaseClient.storage.from(DOCUMENTOS_BUCKET).remove([ruta]);
+    alert('El archivo se cargó pero no pudo vincularse a la reserva: '+dbError.message);
+    return;
+  }
+
+  if(existente?.ruta_storage && existente.ruta_storage!==ruta){
+    await supabaseClient.storage
+      .from(DOCUMENTOS_BUCKET)
+      .remove([existente.ruta_storage]);
+  }
+
+  await cargarDocumentosAdjuntos();
+}
+
+async function verDocumentoAdjunto(doc){
+  const {data,error}=await supabaseClient.storage
+    .from(DOCUMENTOS_BUCKET)
+    .createSignedUrl(doc.ruta_storage,60*10);
+
+  if(error || !data?.signedUrl){
+    alert('No se pudo abrir el documento: '+(error?.message||'URL no disponible'));
+    return;
+  }
+
+  window.open(data.signedUrl,'_blank','noopener');
+}
+
 function mostrarDocumentosReserva(reserva,cliente){
   documentacionActual={reserva,cliente,files:null};
 
@@ -321,9 +512,10 @@ function mostrarDocumentosReserva(reserva,cliente){
     <div><span>Reserva</span><strong>#${reserva.id}</strong></div>
     <div><span>Cliente</span><strong>${nombreCompletoCliente(cliente)}</strong></div>
     <div><span>Evento</span><strong>${docFechaAR(reserva.fecha)} · ${reserva.hora_inicio?.slice(0,5)} a ${reserva.hora_fin?.slice(0,5)}</strong></div>
-    <div><span>Documentos</span><strong>4 PDF</strong><small>Ficha + Reglamento + Lista de invitados + Notificación</small></div>
+    <div><span>Documentos para entregar</span><strong>4 PDF</strong><small>Ficha + Reglamento + Lista de invitados + Notificación</small></div>
   `;
   panel.classList.remove('hidden');
+  cargarDocumentosAdjuntos();
   panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
