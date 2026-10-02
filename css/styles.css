@@ -321,3 +321,17 @@ table td small{display:block;color:var(--muted);margin-top:4px}
   .security-detail-grid,.security-operational-grid{grid-template-columns:1fr}
   .security-doc-ready{align-items:flex-start;flex-direction:column}
 }
+
+
+/* V18 - Hora de finalización a medianoche */
+.time-midnight-wrap{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+}
+.time-midnight-wrap .btn{
+  min-height:42px;
+  padding-left:14px;
+  padding-right:14px;
+}

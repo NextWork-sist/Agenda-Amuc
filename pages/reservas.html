@@ -61,7 +61,13 @@
           <label>Fecha<input type="date" id="fecha" required></label>
           <label>Tipo de evento<input type="text" id="tipo_evento"></label>
           <label>Hora inicio<input type="time" id="hora_inicio" required></label>
-          <label>Hora fin<input type="time" id="hora_fin" required></label>
+          <label>Hora fin
+            <div class="time-midnight-wrap">
+              <input type="time" id="hora_fin" required step="60">
+              <button type="button" id="setMidnightBtn" class="btn btn-small btn-secondary">00:00</button>
+            </div>
+            <small class="field-help">00:00 se interpreta como medianoche del día siguiente.</small>
+          </label>
           <label>Cantidad de personas<input type="number" id="cantidad_personas" min="0"></label>
           <label>Estado<select id="estado"><option value="PRE_RESERVA">Pre-reserva</option><option value="CONFIRMADA">Confirmada</option><option value="CANCELADA">Cancelada</option><option value="REALIZADA">Realizada</option><option value="CERRADA">Cerrada</option></select></label>
           <div class="full price-summary">

@@ -4,9 +4,25 @@ let availabilityCheckToken=0;
 
 function money(v){return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(Number(v||0));}
 function fd(v){return v?new Intl.DateTimeFormat('es-AR').format(new Date(v+'T12:00:00')):'';}
-function horas(i,f){if(!i||!f)return 0;const[a,b]=i.split(':').map(Number),[c,d]=f.split(':').map(Number);let x=a*60+b,y=c*60+d;if(y<=x)y+=1440;return(y-x)/60;}
+function normalizarHora(v){
+  const s=String(v||'').trim().slice(0,5);
+  if(s==='24:00')return '00:00';
+  return s;
+}
+function horas(i,f){
+  i=normalizarHora(i);
+  f=normalizarHora(f);
+  if(!i||!f)return 0;
+  const[a,b]=i.split(':').map(Number),[c,d]=f.split(':').map(Number);
+  let x=a*60+b,y=c*60+d;
+  // Si la hora final es igual o anterior a la inicial, termina al día siguiente.
+  if(y<=x)y+=1440;
+  return(y-x)/60;
+}
 
 function intervaloReserva(fecha,inicio,fin){
+  inicio=normalizarHora(inicio);
+  fin=normalizarHora(fin);
   if(!fecha||!inicio||!fin)return null;
   const start=new Date(`${fecha}T${inicio}:00`);
   let end=new Date(`${fecha}T${fin}:00`);
@@ -22,6 +38,8 @@ function descripcionReserva(r){
 }
 
 async function evaluarDisponibilidad(fecha,inicio,fin){
+  inicio=normalizarHora(inicio);
+  fin=normalizarHora(fin);
   if(!fecha||!inicio||!fin){
     return {tipo:'incompleto',reserva_id:null,minutos:null};
   }
@@ -136,6 +154,13 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('hora_inicio').addEventListener('change',()=>{actualizarPrecio();verificarDisponibilidadVisual();});
   document.getElementById('hora_fin').addEventListener('change',()=>{actualizarPrecio();verificarDisponibilidadVisual();});
   document.getElementById('reservaForm').addEventListener('submit',guardarReserva);
+  document.getElementById('setMidnightBtn')?.addEventListener('click',()=>{
+    const fin=document.getElementById('hora_fin');
+    fin.value='00:00';
+    fin.dispatchEvent(new Event('input',{bubbles:true}));
+    fin.dispatchEvent(new Event('change',{bubbles:true}));
+    fin.focus();
+  });
   const{data}=await supabaseClient.from('tarifas').select('tipo_usuario,valor_hora').eq('activo',true);
   (data||[]).forEach(t=>tarifas[t.tipo_usuario]=Number(t.valor_hora));
   loadReservas();

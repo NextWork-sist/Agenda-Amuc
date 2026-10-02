@@ -173,3 +173,11 @@ Funciones:
 
 Antes de usarlo ejecutar `supabase_seguridad_v17.sql` en Supabase producción.
 Después crear cada usuario en Authentication y su perfil correspondiente con rol `SEGURIDAD`.
+
+
+## V18 - Finalización a las 00:00
+- El campo Hora fin acepta expresamente `00:00`.
+- Se agregó un botón rápido `00:00` junto al campo de hora final.
+- `00:00` se interpreta como medianoche del día siguiente cuando la hora de inicio es anterior.
+- Ejemplo: 18:00 a 00:00 = 6 horas exactas.
+- El mismo criterio se mantiene para disponibilidad, superposición, ficha y egreso operativo.

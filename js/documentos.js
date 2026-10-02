@@ -74,7 +74,8 @@ async function fetchBytes(url,nombre){
 
 function parseFechaHoraLocal(fechaISO,hora){
   const [y,m,d] = fechaISO.split('-').map(Number);
-  const [hh,mm] = hora.slice(0,5).split(':').map(Number);
+  const limpia = String(hora||'').slice(0,5)==='24:00' ? '00:00' : String(hora||'').slice(0,5);
+  const [hh,mm] = limpia.split(':').map(Number);
   return new Date(y,m-1,d,hh,mm,0,0);
 }
 
