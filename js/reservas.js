@@ -300,20 +300,17 @@ function renderReservas(data){
   const puedeEditar=esRolEdicionReserva();
   const esAdmin=perfilActual?.rol==='ADMINISTRADOR';
 
-  b.innerHTML=`<table>
+  b.innerHTML=`<table class="reservas-compact-table">
     <thead>
       <tr>
-        <th>N°</th>
+        <th>N° reserva</th>
         <th>Fecha</th>
         <th>Cliente</th>
         <th>DNI</th>
-        <th>Condición</th>
         <th>Evento</th>
         <th>Horario</th>
-        <th>Horas</th>
-        <th>Estado</th>
         <th>Total</th>
-        <th>Documentación</th>
+        <th>Doc</th>
         ${puedeEditar?'<th>Editar</th>':''}
         ${esAdmin?'<th>Eliminar</th>':''}
       </tr>
@@ -324,13 +321,10 @@ function renderReservas(data){
         <td>${fd(r.fecha)}</td>
         <td>${r.clientes?`${r.clientes.nombre||''} ${r.clientes.apellido||''}`:'-'}</td>
         <td>${r.clientes?.dni||'-'}</td>
-        <td>${r.tipo_usuario==='AFILIADO'?'Afiliado':'No afiliado'}</td>
         <td>${r.tipo_evento||'-'}</td>
         <td>${r.hora_inicio?r.hora_inicio.slice(0,5):'-'} / ${r.hora_fin?r.hora_fin.slice(0,5):'-'}</td>
-        <td>${r.cantidad_horas||0}</td>
-        <td>${r.estado}</td>
         <td>${money(r.valor_total)}</td>
-        <td><button type="button" class="btn btn-small btn-secondary docs-reserva-btn" data-id="${r.id}">📎 Documentos</button></td>
+        <td><button type="button" class="btn btn-small btn-secondary docs-reserva-btn" data-id="${r.id}" title="Documentación">📎 Doc</button></td>
         ${puedeEditar?`<td><button type="button" class="btn btn-small btn-secondary edit-reserva-btn" data-id="${r.id}">✏️ Editar</button></td>`:''}
         ${esAdmin?`<td><button type="button" class="icon-btn danger delete-reserva-btn" data-id="${r.id}" title="Eliminar reserva">🗑</button></td>`:''}
       </tr>`).join('')}

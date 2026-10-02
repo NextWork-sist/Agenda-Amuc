@@ -194,3 +194,9 @@ Después crear cada usuario en Authentication y su perfil correspondiente con ro
   - DNI del cliente.
 - La búsqueda por DNI devuelve todas las reservas asociadas a ese cliente.
 - No requiere cambios adicionales en Supabase.
+
+
+## V20 - Tabla compacta de reservas
+La tabla de Reservas registradas muestra solamente:
+N° reserva, Fecha, Cliente, DNI, Evento, Horario, Total, Doc, Editar y Eliminar.
+Se quitaron Condición, Horas y Estado para evitar desplazamiento horizontal en pantallas de escritorio.
