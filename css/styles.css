@@ -335,3 +335,33 @@ table td small{display:block;color:var(--muted);margin-top:4px}
   padding-left:14px;
   padding-right:14px;
 }
+
+
+/* V19 - Edición y búsqueda de reservas */
+.reservation-search-row{
+  display:grid;
+  grid-template-columns:minmax(180px,.7fr) minmax(280px,1.4fr) auto auto;
+  gap:10px;
+  align-items:end;
+  margin-bottom:6px;
+}
+.edit-mode-banner{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  align-items:center;
+  padding:14px 16px;
+  margin-bottom:18px;
+  border:1px solid #d9b45e;
+  background:#fff8e8;
+  border-radius:12px;
+}
+.edit-mode-banner strong,.edit-mode-banner small{display:block}
+.edit-mode-banner small{margin-top:4px;color:var(--muted)}
+@media(max-width:850px){
+  .reservation-search-row{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+  .reservation-search-row{grid-template-columns:1fr}
+  .edit-mode-banner{align-items:flex-start;flex-direction:column}
+}

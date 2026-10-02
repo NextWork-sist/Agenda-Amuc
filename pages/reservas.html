@@ -18,6 +18,13 @@
     <header class="topbar"><div><h1>Reservas</h1><p>Buscar, verificar o crear cliente antes de reservar.</p></div><button id="toggleFormBtn" class="btn btn-primary">Nueva reserva</button></header>
 
     <section id="reservaFormPanel" class="panel hidden">
+      <div id="modoEdicionReserva" class="edit-mode-banner hidden">
+        <div>
+          <strong>Editando reserva <span id="editReservaNumero"></span></strong>
+          <small>Podés modificar cliente, fecha, horario, evento, cantidad de personas, estado y observaciones.</small>
+        </div>
+        <button type="button" id="cancelarEdicionReservaBtn" class="btn btn-secondary">Cancelar edición</button>
+      </div>
       <div class="step-title"><span class="step-number">1</span><div><h2>Buscar cliente</h2><p>DNI, apellido o nombre.</p></div></div>
       <div class="search-row">
         <input type="text" id="clienteSearch" placeholder="Ej.: 25555555, Pérez o Juan Pérez">
@@ -80,7 +87,11 @@
             Seleccioná fecha y horario para verificar la disponibilidad del salón.
           </div>
           <label class="full">Observaciones<textarea id="observaciones" rows="3"></textarea></label>
-          <div class="full form-actions"><button class="btn btn-primary" type="submit">Guardar reserva</button><span id="reservaMessage" class="form-message"></span></div>
+          <div class="full form-actions">
+            <button id="guardarReservaBtn" class="btn btn-primary" type="submit">Guardar reserva</button>
+            <button id="cancelarEdicionReservaBtn2" class="btn btn-secondary hidden" type="button">Cancelar edición</button>
+            <span id="reservaMessage" class="form-message"></span>
+          </div>
         </form>
       </div>
     </section>
@@ -138,7 +149,34 @@
       </div>
     </section>
 
-    <section class="panel"><div class="panel-header"><h2>Reservas registradas</h2></div><div id="reservasTable" class="table-wrap"><p class="muted">Cargando...</p></div></section>
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Reservas registradas</h2>
+          <p>Buscá por número de reserva, número de recibo/factura o DNI del cliente.</p>
+        </div>
+      </div>
+
+      <div class="reservation-search-row">
+        <label>
+          Buscar por
+          <select id="reservaSearchType">
+            <option value="RESERVA">N° de reserva</option>
+            <option value="COMPROBANTE">N° de recibo o factura</option>
+            <option value="DNI">N° de documento (DNI)</option>
+          </select>
+        </label>
+        <label>
+          Dato a buscar
+          <input type="text" id="reservaSearchInput" placeholder="Ingresá el número">
+        </label>
+        <button type="button" id="buscarReservaBtn" class="btn btn-primary">Buscar</button>
+        <button type="button" id="limpiarReservaBtn" class="btn btn-secondary">Limpiar</button>
+      </div>
+      <p id="reservaSearchInfo" class="field-help"></p>
+
+      <div id="reservasTable" class="table-wrap"><p class="muted">Cargando...</p></div>
+    </section>
   </main>
 </div>
 <script src="../js/supabase.js"></script><script src="../js/session.js"></script><script src="../js/documentos.js"></script><script src="../js/reservas.js"></script>

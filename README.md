@@ -181,3 +181,16 @@ Después crear cada usuario en Authentication y su perfil correspondiente con ro
 - `00:00` se interpreta como medianoche del día siguiente cuando la hora de inicio es anterior.
 - Ejemplo: 18:00 a 00:00 = 6 horas exactas.
 - El mismo criterio se mantiene para disponibilidad, superposición, ficha y egreso operativo.
+
+
+## V19 - Edición completa y buscador de reservas
+- Se agregó botón Editar en cada reserva para ADMINISTRADOR y ADMINISTRACION.
+- La edición permite modificar cliente asociado, fecha, horario, tipo de evento, cantidad de personas, estado y observaciones.
+- Horas, valor/hora y total se recalculan automáticamente.
+- La validación de disponibilidad excluye la propia reserva mientras se edita.
+- Se agregó búsqueda por:
+  - N° de reserva.
+  - N° de Recibo C / Factura C.
+  - DNI del cliente.
+- La búsqueda por DNI devuelve todas las reservas asociadas a ese cliente.
+- No requiere cambios adicionales en Supabase.

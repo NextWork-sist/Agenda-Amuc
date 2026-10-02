@@ -1,6 +1,9 @@
 let clienteActual=null,tarifas={AFILIADO:65000,NO_AFILIADO:99500};
 let perfilActual=null;
 let availabilityCheckToken=0;
+let reservaEditandoId=null;
+let reservasGlobal=[];
+
 
 function money(v){return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(Number(v||0));}
 function fd(v){return v?new Intl.DateTimeFormat('es-AR').format(new Date(v+'T12:00:00')):'';}
@@ -37,7 +40,7 @@ function descripcionReserva(r){
   return `${fd(r.fecha)} de ${fmtHora(r.hora_inicio)} a ${fmtHora(r.hora_fin)}${cliente?' - '+cliente:''}${r.tipo_evento?' - '+r.tipo_evento:''}`;
 }
 
-async function evaluarDisponibilidad(fecha,inicio,fin){
+async function evaluarDisponibilidad(fecha,inicio,fin,excludeId=reservaEditandoId){
   inicio=normalizarHora(inicio);
   fin=normalizarHora(fin);
   if(!fecha||!inicio||!fin){
@@ -48,7 +51,7 @@ async function evaluarDisponibilidad(fecha,inicio,fin){
     p_fecha:fecha,
     p_hora_inicio:inicio,
     p_hora_fin:fin,
-    p_exclude_id:null
+    p_exclude_id:excludeId||null
   });
 
   if(error)throw error;
@@ -142,6 +145,221 @@ async function cargarSolicitudWhatsappEnReserva(){
   if(fecha)fecha.value=s.fecha_evento||'';if(hora_inicio)hora_inicio.value=(s.hora_inicio||'').slice(0,5);if(hora_fin)hora_fin.value=(s.hora_fin||'').slice(0,5);if(tipo_evento)tipo_evento.value=s.tipo_evento||'';if(cantidad_personas)cantidad_personas.value=s.cantidad_personas||'';
 }
 
+
+function esRolEdicionReserva(){
+  return ['ADMINISTRADOR','ADMINISTRACION'].includes(perfilActual?.rol);
+}
+
+function resetFormularioReserva(){
+  reservaEditandoId=null;
+  clienteActual=null;
+
+  document.getElementById('reservaForm')?.reset();
+  document.getElementById('cliente_id').value='';
+  document.getElementById('clienteSearch').value='';
+  document.getElementById('clienteSeleccionado').innerHTML='';
+  document.getElementById('clienteSeleccionado').classList.add('hidden');
+  document.getElementById('resultadosClientes').innerHTML='';
+  document.getElementById('reservaDatosPanel').classList.add('hidden');
+  document.getElementById('nuevoClientePanel').classList.add('hidden');
+
+  document.getElementById('modoEdicionReserva')?.classList.add('hidden');
+  document.getElementById('cancelarEdicionReservaBtn2')?.classList.add('hidden');
+
+  const guardar=document.getElementById('guardarReservaBtn');
+  if(guardar)guardar.textContent='Guardar reserva';
+
+  const m=document.getElementById('reservaMessage');
+  if(m){m.textContent='';m.className='form-message';}
+
+  mostrarDisponibilidad({tipo:'incompleto'});
+  actualizarPrecio();
+}
+
+async function editarReserva(id){
+  if(!esRolEdicionReserva()){
+    alert('Tu usuario no tiene permisos para editar reservas.');
+    return;
+  }
+
+  const {data:r,error}=await supabaseClient
+    .from('reservas')
+    .select('id,cliente_id,fecha,hora_inicio,hora_fin,tipo_evento,cantidad_personas,estado,observaciones,tipo_usuario,cantidad_horas,valor_hora,valor_total,clientes(*)')
+    .eq('id',id)
+    .single();
+
+  if(error || !r){
+    alert('No se pudo abrir la reserva para edición: '+(error?.message||'Reserva no encontrada'));
+    return;
+  }
+
+  reservaEditandoId=r.id;
+  document.getElementById('reservaFormPanel').classList.remove('hidden');
+  document.getElementById('nuevoClientePanel').classList.add('hidden');
+
+  if(r.clientes) seleccionarCliente(r.clientes);
+
+  document.getElementById('fecha').value=r.fecha||'';
+  document.getElementById('hora_inicio').value=(r.hora_inicio||'').slice(0,5);
+  document.getElementById('hora_fin').value=(r.hora_fin||'').slice(0,5);
+  document.getElementById('tipo_evento').value=r.tipo_evento||'';
+  document.getElementById('cantidad_personas').value=r.cantidad_personas ?? '';
+  document.getElementById('estado').value=r.estado||'PRE_RESERVA';
+  document.getElementById('observaciones').value=r.observaciones||'';
+
+  document.getElementById('modoEdicionReserva').classList.remove('hidden');
+  document.getElementById('editReservaNumero').textContent=`#${r.id}`;
+  document.getElementById('cancelarEdicionReservaBtn2').classList.remove('hidden');
+  document.getElementById('guardarReservaBtn').textContent='Guardar cambios';
+
+  document.getElementById('reservaDatosPanel').classList.remove('hidden');
+  actualizarPrecio();
+  await verificarDisponibilidadVisual();
+
+  document.getElementById('reservaFormPanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function normalizarBusquedaReserva(v){
+  return String(v||'').trim().toLowerCase().replace(/[\s\-./]/g,'');
+}
+
+async function buscarReservas(){
+  const tipo=document.getElementById('reservaSearchType').value;
+  const input=document.getElementById('reservaSearchInput');
+  const info=document.getElementById('reservaSearchInfo');
+  const q=input.value.trim();
+
+  if(!q){
+    info.textContent='Ingresá un dato para buscar.';
+    renderReservas(reservasGlobal);
+    return;
+  }
+
+  info.textContent='Buscando...';
+
+  try{
+    let resultados=[];
+
+    if(tipo==='RESERVA'){
+      const id=Number(q.replace(/\D/g,''));
+      resultados=reservasGlobal.filter(r=>Number(r.id)===id);
+    }
+
+    if(tipo==='DNI'){
+      const qn=normalizarBusquedaReserva(q);
+      resultados=reservasGlobal.filter(r=>
+        normalizarBusquedaReserva(r.clientes?.dni)===qn
+      );
+    }
+
+    if(tipo==='COMPROBANTE'){
+      const {data:pagos,error}=await supabaseClient
+        .from('pagos')
+        .select('reserva_id,numero_comprobante')
+        .not('numero_comprobante','is',null);
+
+      if(error)throw error;
+
+      const qn=normalizarBusquedaReserva(q);
+      const ids=new Set(
+        (pagos||[])
+          .filter(p=>normalizarBusquedaReserva(p.numero_comprobante).includes(qn))
+          .map(p=>Number(p.reserva_id))
+      );
+      resultados=reservasGlobal.filter(r=>ids.has(Number(r.id)));
+    }
+
+    renderReservas(resultados);
+
+    if(!resultados.length){
+      info.textContent='No se encontraron reservas con ese dato.';
+    }else if(tipo==='DNI'){
+      info.textContent=`${resultados.length} reserva${resultados.length===1?'':'s'} asociada${resultados.length===1?'':'s'} al DNI ingresado.`;
+    }else{
+      info.textContent=`${resultados.length} reserva${resultados.length===1?'':'s'} encontrada${resultados.length===1?'':'s'}.`;
+    }
+  }catch(err){
+    info.textContent='No se pudo realizar la búsqueda: '+err.message;
+  }
+}
+
+function limpiarBusquedaReservas(){
+  document.getElementById('reservaSearchInput').value='';
+  document.getElementById('reservaSearchInfo').textContent='';
+  renderReservas(reservasGlobal);
+}
+
+function renderReservas(data){
+  const b=document.getElementById('reservasTable');
+
+  if(!data?.length){
+    b.innerHTML='<p class="muted">No se encontraron reservas.</p>';
+    return;
+  }
+
+  const puedeEditar=esRolEdicionReserva();
+  const esAdmin=perfilActual?.rol==='ADMINISTRADOR';
+
+  b.innerHTML=`<table>
+    <thead>
+      <tr>
+        <th>N°</th>
+        <th>Fecha</th>
+        <th>Cliente</th>
+        <th>DNI</th>
+        <th>Condición</th>
+        <th>Evento</th>
+        <th>Horario</th>
+        <th>Horas</th>
+        <th>Estado</th>
+        <th>Total</th>
+        <th>Documentación</th>
+        ${puedeEditar?'<th>Editar</th>':''}
+        ${esAdmin?'<th>Eliminar</th>':''}
+      </tr>
+    </thead>
+    <tbody>
+      ${data.map(r=>`<tr>
+        <td><strong>#${r.id}</strong></td>
+        <td>${fd(r.fecha)}</td>
+        <td>${r.clientes?`${r.clientes.nombre||''} ${r.clientes.apellido||''}`:'-'}</td>
+        <td>${r.clientes?.dni||'-'}</td>
+        <td>${r.tipo_usuario==='AFILIADO'?'Afiliado':'No afiliado'}</td>
+        <td>${r.tipo_evento||'-'}</td>
+        <td>${r.hora_inicio?r.hora_inicio.slice(0,5):'-'} / ${r.hora_fin?r.hora_fin.slice(0,5):'-'}</td>
+        <td>${r.cantidad_horas||0}</td>
+        <td>${r.estado}</td>
+        <td>${money(r.valor_total)}</td>
+        <td><button type="button" class="btn btn-small btn-secondary docs-reserva-btn" data-id="${r.id}">📎 Documentos</button></td>
+        ${puedeEditar?`<td><button type="button" class="btn btn-small btn-secondary edit-reserva-btn" data-id="${r.id}">✏️ Editar</button></td>`:''}
+        ${esAdmin?`<td><button type="button" class="icon-btn danger delete-reserva-btn" data-id="${r.id}" title="Eliminar reserva">🗑</button></td>`:''}
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+
+  b.querySelectorAll('.docs-reserva-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const r=data.find(x=>String(x.id)===String(btn.dataset.id));
+      if(!r)return;
+      mostrarDocumentosReserva(r,r.clientes||{});
+    });
+  });
+
+  b.querySelectorAll('.edit-reserva-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>editarReserva(Number(btn.dataset.id)));
+  });
+
+  if(esAdmin){
+    b.querySelectorAll('.delete-reserva-btn').forEach(btn=>{
+      btn.addEventListener('click',async(e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        await borrarReserva(Number(btn.dataset.id));
+      });
+    });
+  }
+}
+
 document.addEventListener('DOMContentLoaded',async()=>{
   const c=await requireSession();if(!c)return;perfilActual=c.perfil;
   document.getElementById('toggleFormBtn').onclick=()=>document.getElementById('reservaFormPanel').classList.toggle('hidden');
@@ -154,6 +372,13 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('hora_inicio').addEventListener('change',()=>{actualizarPrecio();verificarDisponibilidadVisual();});
   document.getElementById('hora_fin').addEventListener('change',()=>{actualizarPrecio();verificarDisponibilidadVisual();});
   document.getElementById('reservaForm').addEventListener('submit',guardarReserva);
+  document.getElementById('cancelarEdicionReservaBtn')?.addEventListener('click',resetFormularioReserva);
+  document.getElementById('cancelarEdicionReservaBtn2')?.addEventListener('click',resetFormularioReserva);
+  document.getElementById('buscarReservaBtn')?.addEventListener('click',buscarReservas);
+  document.getElementById('limpiarReservaBtn')?.addEventListener('click',limpiarBusquedaReservas);
+  document.getElementById('reservaSearchInput')?.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();buscarReservas();}
+  });
   document.getElementById('setMidnightBtn')?.addEventListener('click',()=>{
     const fin=document.getElementById('hora_fin');
     fin.value='00:00';
@@ -183,8 +408,8 @@ async function guardarReserva(e){
   }
 
   const fecha=document.getElementById('fecha').value;
-  const i=document.getElementById('hora_inicio').value;
-  const f=document.getElementById('hora_fin').value;
+  const i=normalizarHora(document.getElementById('hora_inicio').value);
+  const f=normalizarHora(document.getElementById('hora_fin').value);
 
   m.textContent='Verificando disponibilidad...';
   m.className='form-message';
@@ -241,7 +466,27 @@ async function guardarReserva(e){
 
   m.textContent='Guardando reserva...';
 
-  const {data:nuevaReserva,error}=await supabaseClient.from('reservas').insert(p).select('id').single();
+  let nuevaReserva=null;
+  let error=null;
+
+  if(reservaEditandoId){
+    const resultado=await supabaseClient
+      .from('reservas')
+      .update(p)
+      .eq('id',reservaEditandoId)
+      .select('id')
+      .single();
+    nuevaReserva=resultado.data;
+    error=resultado.error;
+  }else{
+    const resultado=await supabaseClient
+      .from('reservas')
+      .insert(p)
+      .select('id')
+      .single();
+    nuevaReserva=resultado.data;
+    error=resultado.error;
+  }
 
   if(error){
     // La base sigue siendo la última barrera ante dos usuarios reservando al mismo tiempo.
@@ -258,42 +503,39 @@ async function guardarReserva(e){
     return;
   }
 
-  m.textContent='Reserva guardada correctamente.';
+  const eraEdicion=Boolean(reservaEditandoId);
+  m.textContent=eraEdicion?'Reserva actualizada correctamente.':'Reserva guardada correctamente.';
   m.className='form-message success';
   const reservaGuardada={...p,id:nuevaReserva.id};
   mostrarDocumentosReserva(reservaGuardada,{...clienteActual});
+
+  if(eraEdicion){
+    reservaEditandoId=null;
+    document.getElementById('modoEdicionReserva')?.classList.add('hidden');
+    document.getElementById('cancelarEdicionReservaBtn2')?.classList.add('hidden');
+    document.getElementById('guardarReservaBtn').textContent='Guardar reserva';
+  }
+
   await loadReservas();
   await cargarSolicitudWhatsappEnReserva();
 }
 
 async function loadReservas(){
-  const{data,error}=await supabaseClient.from('reservas').select('id,fecha,hora_inicio,hora_fin,tipo_evento,cantidad_personas,valor_total,estado,tipo_usuario,cantidad_horas,clientes(id,nombre,apellido,dni,telefono,email)').order('fecha',{ascending:false});
+  const{data,error}=await supabaseClient
+    .from('reservas')
+    .select('id,cliente_id,fecha,hora_inicio,hora_fin,tipo_evento,cantidad_personas,valor_total,valor_hora,estado,observaciones,tipo_usuario,cantidad_horas,clientes(id,nombre,apellido,dni,telefono,email,afiliado,requiere_factura,razon_social,cuit,direccion_fiscal,condicion_iva)')
+    .order('fecha',{ascending:false})
+    .order('hora_inicio',{ascending:false});
+
   const b=document.getElementById('reservasTable');
-  if(error){b.innerHTML=`<p class="error">${error.message}</p>`;return;}
-  if(!data?.length){b.innerHTML='<p class="muted">Sin reservas.</p>';return;}
-  const esAdmin=perfilActual?.rol==='ADMINISTRADOR';
-  b.innerHTML=`<table><thead><tr><th>Fecha</th><th>Cliente</th><th>Condición</th><th>Evento</th><th>Horario</th><th>Horas</th><th>Estado</th><th>Total</th><th>Documentación</th>${esAdmin?'<th>Acción</th>':''}</tr></thead><tbody>${data.map(r=>`<tr><td>${fd(r.fecha)}</td><td>${r.clientes?`${r.clientes.nombre||''} ${r.clientes.apellido||''}`:'-'}</td><td>${r.tipo_usuario==='AFILIADO'?'Afiliado':'No afiliado'}</td><td>${r.tipo_evento||'-'}</td><td>${r.hora_inicio?r.hora_inicio.slice(0,5):'-'} / ${r.hora_fin?r.hora_fin.slice(0,5):'-'}</td><td>${r.cantidad_horas||0}</td><td>${r.estado}</td><td>${money(r.valor_total)}</td><td><button type="button" class="btn btn-small btn-secondary docs-reserva-btn" data-id="${r.id}">📎 Documentos</button></td>${esAdmin?`<td><button type="button" class="icon-btn danger delete-reserva-btn" data-id="${r.id}" title="Eliminar reserva">🗑</button></td>`:''}</tr>`).join('')}</tbody></table>`;
-
-  b.querySelectorAll('.docs-reserva-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const r=data.find(x=>String(x.id)===String(btn.dataset.id));
-      if(!r)return;
-      mostrarDocumentosReserva(r,r.clientes||{});
-    });
-  });
-
-  if(esAdmin){
-    b.querySelectorAll('.delete-reserva-btn').forEach(btn=>{
-      btn.addEventListener('click', async (e)=>{
-        e.preventDefault();
-        e.stopPropagation();
-        const id = Number(btn.dataset.id);
-        await borrarReserva(id);
-      });
-    });
+  if(error){
+    b.innerHTML=`<p class="error">${error.message}</p>`;
+    return;
   }
-}
 
+  reservasGlobal=data||[];
+  renderReservas(reservasGlobal);
+}
 
 async function borrarReserva(id){
   if(perfilActual?.rol !== 'ADMINISTRADOR'){
