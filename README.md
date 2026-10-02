@@ -132,3 +132,12 @@ En la pestaña Cobros se agregó búsqueda por número de Recibo C o Factura C.
 - permite buscar con botón o tecla Enter;
 - botón Limpiar restaura todos los movimientos.
 No requiere cambios adicionales en Supabase.
+
+
+## V15 - Documentación adicional
+Se incorporaron:
+- Lista de invitados: logo AMUC + fecha del evento + hora de ingreso + responsable + teléfono.
+- Notificación: aclaración + DNI + teléfono + fecha del evento.
+El botón Compartir archivos ahora prepara 4 PDF: ficha, reglamento, lista de invitados y notificación.
+La firma del responsable en la notificación queda libre.
+La hora de ingreso se calcula 30 minutos antes del horario de inicio, igual que en la ficha.

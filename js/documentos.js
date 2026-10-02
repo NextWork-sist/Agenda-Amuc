@@ -29,6 +29,10 @@ function nombreCompletoCliente(c){
   return [c?.apellido, c?.nombre].filter(Boolean).join(', ');
 }
 
+function nombreApellidoCliente(c){
+  return [c?.nombre, c?.apellido].filter(Boolean).join(' ');
+}
+
 async function fetchFile(url,nombre){
   const r = await fetch(url);
   if(!r.ok) throw new Error(`No se pudo cargar ${nombre}`);
@@ -36,6 +40,11 @@ async function fetchFile(url,nombre){
   return new File([blob], nombre, {type:'application/pdf'});
 }
 
+async function fetchBytes(url,nombre){
+  const r = await fetch(url);
+  if(!r.ok) throw new Error(`No se pudo cargar ${nombre}`);
+  return await r.arrayBuffer();
+}
 
 function parseFechaHoraLocal(fechaISO,hora){
   const [y,m,d] = fechaISO.split('-').map(Number);
@@ -62,7 +71,6 @@ function calcularIngresoEgreso(reserva){
   const inicio = parseFechaHoraLocal(reserva.fecha,reserva.hora_inicio);
   let fin = parseFechaHoraLocal(reserva.fecha,reserva.hora_fin);
 
-  // Si finaliza a la misma hora o antes, el evento cruza medianoche.
   if(fin <= inicio){
     fin.setDate(fin.getDate()+1);
   }
@@ -78,14 +86,9 @@ function calcularIngresoEgreso(reserva){
   };
 }
 
-async function crearFichaReservaPDF(reserva,cliente){
-  const template = await fetch('../assets/documentos/salon_fiestas_ficha.pdf').then(r=>r.arrayBuffer());
-  const pdfDoc = await PDFLib.PDFDocument.load(template);
-  const page = pdfDoc.getPages()[0];
-  const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+function crearDrawTop(page,font){
   const {height} = page.getSize();
-
-  const drawTop = (x,top,text,size=9.5,maxWidth=null)=>{
+  return (x,top,text,size=9.5,maxWidth=null)=>{
     let value = String(text ?? '');
     let fontSize = size;
     if(maxWidth){
@@ -101,6 +104,14 @@ async function crearFichaReservaPDF(reserva,cliente){
       color:PDFLib.rgb(0,0,0)
     });
   };
+}
+
+async function crearFichaReservaPDF(reserva,cliente){
+  const template = await fetchBytes('../assets/documentos/salon_fiestas_ficha.pdf','ficha del salón');
+  const pdfDoc = await PDFLib.PDFDocument.load(template);
+  const page = pdfDoc.getPages()[0];
+  const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+  const drawTop = crearDrawTop(page,font);
 
   const {
     ingresoFecha,
@@ -140,6 +151,64 @@ async function crearReglamentoPDF(reserva){
   );
 }
 
+async function crearListaInvitadosPDF(reserva,cliente){
+  const template = await fetchBytes('../assets/documentos/lista_de_invitados80.pdf','lista de invitados');
+  const pdfDoc = await PDFLib.PDFDocument.load(template);
+  const page = pdfDoc.getPages()[0];
+  const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+  const drawTop = crearDrawTop(page,font);
+
+  const {ingresoHora} = calcularIngresoEgreso(reserva);
+
+  // Logo AMUC en el encabezado.
+  try{
+    const logoBytes = await fetchBytes('../assets/logo-amuc.jpg','logo AMUC');
+    const logo = await pdfDoc.embedJpg(logoBytes);
+    page.drawImage(logo,{
+      x:20,
+      y:page.getHeight()-58,
+      width:40,
+      height:40
+    });
+  }catch(err){
+    console.warn('No se pudo insertar el logo en la lista de invitados.',err);
+  }
+
+  // Datos automáticos.
+  drawTop(114,72,docFechaAR(reserva.fecha),9,66);
+  drawTop(337,72,ingresoHora,9,90);
+  drawTop(148,87,nombreApellidoCliente(cliente),9,116);
+  drawTop(320,87,cliente?.telefono || '',9,98);
+
+  const bytes = await pdfDoc.save();
+  return new File(
+    [bytes],
+    `Lista_Invitados_AMUC_Reserva_${reserva.id || 'nueva'}.pdf`,
+    {type:'application/pdf'}
+  );
+}
+
+async function crearNotificacionPDF(reserva,cliente){
+  const template = await fetchBytes('../assets/documentos/salon_fiestas_notificacion.pdf','notificación');
+  const pdfDoc = await PDFLib.PDFDocument.load(template);
+  const page = pdfDoc.getPages()[0];
+  const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+  const drawTop = crearDrawTop(page,font);
+
+  // Firma del responsable queda libre para firma manuscrita.
+  drawTop(165,459,nombreApellidoCliente(cliente),10.5,310);
+  drawTop(165,492,cliente?.dni || '',10.5,190);
+  drawTop(165,524,cliente?.telefono || '',10.5,210);
+  drawTop(165,557,docFechaAR(reserva.fecha),10.5,150);
+
+  const bytes = await pdfDoc.save();
+  return new File(
+    [bytes],
+    `Notificacion_AMUC_Reserva_${reserva.id || 'nueva'}.pdf`,
+    {type:'application/pdf'}
+  );
+}
+
 function descargarArchivo(file){
   const url = URL.createObjectURL(file);
   const a = document.createElement('a');
@@ -155,13 +224,14 @@ async function prepararArchivosReserva(){
   if(!documentacionActual) throw new Error('No hay una reserva seleccionada.');
   if(documentacionActual.files) return documentacionActual.files;
 
-  const ficha = await crearFichaReservaPDF(
-    documentacionActual.reserva,
-    documentacionActual.cliente
-  );
-  const reglamento = await crearReglamentoPDF(documentacionActual.reserva);
+  const [ficha,reglamento,listaInvitados,notificacion] = await Promise.all([
+    crearFichaReservaPDF(documentacionActual.reserva,documentacionActual.cliente),
+    crearReglamentoPDF(documentacionActual.reserva),
+    crearListaInvitadosPDF(documentacionActual.reserva,documentacionActual.cliente),
+    crearNotificacionPDF(documentacionActual.reserva,documentacionActual.cliente)
+  ]);
 
-  documentacionActual.files = [ficha,reglamento];
+  documentacionActual.files = [ficha,reglamento,listaInvitados,notificacion];
   return documentacionActual.files;
 }
 
@@ -182,7 +252,7 @@ async function compartirArchivosReserva(){
     }
 
     files.forEach(descargarArchivo);
-    alert('Este navegador no permite adjuntar archivos desde la web. Los dos PDF fueron descargados para que puedas adjuntarlos en WhatsApp o correo.');
+    alert('Este navegador no permite adjuntar archivos desde la web. Los cuatro PDF fueron descargados para que puedas adjuntarlos en WhatsApp o correo.');
   }catch(err){
     console.error(err);
     alert('No se pudieron preparar los documentos: '+err.message);
@@ -200,6 +270,20 @@ async function descargarReglamentoReserva(){
   try{
     const [,reglamento] = await prepararArchivosReserva();
     descargarArchivo(reglamento);
+  }catch(err){ alert(err.message); }
+}
+
+async function descargarListaInvitadosReserva(){
+  try{
+    const [,,lista] = await prepararArchivosReserva();
+    descargarArchivo(lista);
+  }catch(err){ alert(err.message); }
+}
+
+async function descargarNotificacionReserva(){
+  try{
+    const [,,,notificacion] = await prepararArchivosReserva();
+    descargarArchivo(notificacion);
   }catch(err){ alert(err.message); }
 }
 
@@ -222,7 +306,7 @@ function correoReserva(){
   const r=documentacionActual?.reserva||{};
   const to=c.email||'';
   const subject=encodeURIComponent(`Documentación reserva Salón AMUC - ${docFechaAR(r.fecha)}`);
-  const body=encodeURIComponent(textoMensajeReserva() + '\n\nSe adjuntan la ficha del evento y el reglamento de uso.');
+  const body=encodeURIComponent(textoMensajeReserva() + '\n\nSe adjuntan ficha del evento, reglamento de uso, lista de invitados y notificación.');
   window.location.href=`mailto:${encodeURIComponent(to)}?subject=${subject}&body=${body}`;
 }
 
@@ -237,7 +321,7 @@ function mostrarDocumentosReserva(reserva,cliente){
     <div><span>Reserva</span><strong>#${reserva.id}</strong></div>
     <div><span>Cliente</span><strong>${nombreCompletoCliente(cliente)}</strong></div>
     <div><span>Evento</span><strong>${docFechaAR(reserva.fecha)} · ${reserva.hora_inicio?.slice(0,5)} a ${reserva.hora_fin?.slice(0,5)}</strong></div>
-    <div><span>Documentos</span><strong>Ficha + Reglamento</strong></div>
+    <div><span>Documentos</span><strong>4 PDF</strong><small>Ficha + Reglamento + Lista de invitados + Notificación</small></div>
   `;
   panel.classList.remove('hidden');
   panel.scrollIntoView({behavior:'smooth',block:'start'});
@@ -247,6 +331,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('compartirArchivosBtn')?.addEventListener('click',compartirArchivosReserva);
   document.getElementById('descargarFichaBtn')?.addEventListener('click',descargarFichaReserva);
   document.getElementById('descargarReglamentoBtn')?.addEventListener('click',descargarReglamentoReserva);
+  document.getElementById('descargarListaInvitadosBtn')?.addEventListener('click',descargarListaInvitadosReserva);
+  document.getElementById('descargarNotificacionBtn')?.addEventListener('click',descargarNotificacionReserva);
   document.getElementById('whatsappMensajeBtn')?.addEventListener('click',whatsappReserva);
   document.getElementById('correoMensajeBtn')?.addEventListener('click',correoReserva);
 });
