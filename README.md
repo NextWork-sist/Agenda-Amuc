@@ -156,3 +156,20 @@ Desde la lista de reservas se agregó el botón "Documentos", que permite abrir 
 Cada tipo muestra estado Pendiente / Adjuntado y permite Ver / Reemplazar.
 
 Antes de usar esta versión ejecutar `supabase_documentos_policies.sql` en Supabase producción.
+
+
+## V17 - Panel exclusivo de Seguridad
+Se agregó `pages/seguridad.html`.
+
+Funciones:
+- Login redirige automáticamente al rol SEGURIDAD a su panel.
+- Seguridad no accede a Dashboard, Reservas, Clientes, Cobros ni Reportes.
+- Vista de eventos de hoy / próximos 7 / próximos 30 días.
+- Datos visibles: fecha, horario, tipo de evento, responsable, teléfono y cantidad de asistentes.
+- Ingreso previsto y egreso previsto calculados con 30 minutos de margen.
+- Acceso de sólo lectura a la Lista de Invitados cargada en el legajo.
+- Registro de ingreso real y egreso real con fecha/hora y usuario automáticos.
+- Observaciones inmutables vinculadas al evento y al usuario autenticado.
+
+Antes de usarlo ejecutar `supabase_seguridad_v17.sql` en Supabase producción.
+Después crear cada usuario en Authentication y su perfil correspondiente con rol `SEGURIDAD`.

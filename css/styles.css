@@ -226,3 +226,98 @@ table td small{display:block;color:var(--muted);margin-top:4px}
   .doc-upload-card{align-items:flex-start;flex-direction:column}
   .doc-upload-actions{justify-content:flex-start}
 }
+
+
+/* V17 - Panel Seguridad */
+.security-layout{min-height:100vh;background:var(--bg)}
+.security-topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  padding:12px 20px;background:#142f49;color:#fff;
+  box-shadow:0 4px 16px rgba(0,0,0,.14)
+}
+.security-brand{display:flex;align-items:center;gap:12px}
+.security-brand strong,.security-brand span{display:block}
+.security-brand span{font-size:12px;opacity:.8;margin-top:3px}
+.security-content{max-width:1100px;margin:0 auto;padding:24px}
+.security-hero{
+  display:flex;justify-content:space-between;align-items:center;gap:18px;
+  margin-bottom:18px
+}
+.security-hero h1{margin:4px 0 5px;font-size:30px}
+.security-hero p{margin:0;color:var(--muted)}
+.security-filter-panel{padding:14px 18px}
+.security-filter-row{display:grid;grid-template-columns:minmax(180px,280px);gap:12px}
+.security-events-grid{display:grid;gap:14px}
+.security-event-card{
+  display:grid;grid-template-columns:180px 1fr auto;gap:18px;align-items:center;
+  background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px;
+  box-shadow:0 5px 18px rgba(20,47,73,.05)
+}
+.security-event-date{border-right:1px solid var(--border);padding-right:16px}
+.security-event-date strong,.security-event-date span{display:block}
+.security-event-date strong{font-size:18px}
+.security-event-date span{margin-top:5px;color:var(--primary);font-weight:800}
+.security-event-main h2{margin:4px 0 5px;font-size:21px}
+.security-event-main p{margin:0;color:var(--muted)}
+.security-event-contact{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.security-modal-card{width:min(900px,96vw);max-height:92vh;overflow:auto}
+.security-modal-body{padding:20px}
+.security-detail-grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px
+}
+.security-detail-grid div{
+  border:1px solid var(--border);background:#f9fbfc;border-radius:10px;padding:11px
+}
+.security-detail-grid span,.security-detail-grid strong{display:block}
+.security-detail-grid span{font-size:11px;color:var(--muted);margin-bottom:4px}
+.security-section{
+  margin-top:22px;padding-top:18px;border-top:1px solid var(--border)
+}
+.security-section h3{margin:0 0 14px}
+.security-operational-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px
+}
+.security-operation-card{
+  border:1px solid var(--border);border-radius:12px;padding:14px;background:#fff
+}
+.security-operation-card span,.security-operation-card strong,.security-operation-card small{
+  display:block
+}
+.security-operation-card span{font-size:11px;color:var(--muted)}
+.security-operation-card strong{font-size:17px;margin:5px 0}
+.security-operation-card small{color:var(--muted);min-height:18px;margin-bottom:10px}
+.security-doc-ready,.security-doc-missing{
+  border-radius:12px;padding:14px
+}
+.security-doc-ready{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  border:1px solid #9ccdb0;background:#f2fbf6
+}
+.security-doc-ready strong,.security-doc-ready small{display:block}
+.security-doc-ready small{margin-top:4px;color:var(--muted)}
+.security-doc-missing{border:1px solid #e2c36f;background:#fff5df;color:#755613}
+.security-observation-actions{margin-top:10px}
+.security-observations{margin-top:16px;display:grid;gap:10px}
+.security-observation-item{
+  border:1px solid var(--border);background:#fff;border-radius:12px;padding:12px
+}
+.security-observation-meta{
+  display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted)
+}
+.security-observation-item p{margin:8px 0 0;white-space:pre-wrap}
+@media(max-width:800px){
+  .security-content{padding:14px}
+  .security-hero{align-items:flex-start;flex-direction:column}
+  .security-event-card{grid-template-columns:1fr}
+  .security-event-date{border-right:0;border-bottom:1px solid var(--border);padding:0 0 10px}
+  .security-event-contact{justify-content:flex-start}
+  .security-detail-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .security-topbar{padding:10px 12px}
+  .security-brand .sidebar-logo{width:40px;height:40px}
+  .security-topbar .btn{padding:9px 10px;font-size:12px}
+  .security-detail-grid,.security-operational-grid{grid-template-columns:1fr}
+  .security-doc-ready{align-items:flex-start;flex-direction:column}
+}

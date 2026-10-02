@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda AMUC - Seguridad</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="security-layout">
+  <header class="security-topbar">
+    <div class="security-brand">
+      <img src="../assets/logo-amuc.jpg" alt="Logo AMUC" class="sidebar-logo">
+      <div>
+        <strong>AMUC · Seguridad</strong>
+        <span id="securityUserName">Cargando usuario...</span>
+      </div>
+    </div>
+    <button id="logoutBtn" class="btn btn-secondary">Cerrar sesión</button>
+    <span id="userRole" class="hidden">SEGURIDAD</span>
+  </header>
+
+  <main class="security-content">
+    <section class="security-hero">
+      <div>
+        <span class="eyebrow">PANEL OPERATIVO</span>
+        <h1>Eventos del Salón</h1>
+        <p>Horarios, responsable, lista de asistentes y novedades registradas.</p>
+      </div>
+      <button id="refreshSecurityBtn" class="btn btn-primary">Actualizar</button>
+    </section>
+
+    <section class="panel security-filter-panel">
+      <div class="security-filter-row">
+        <label>Mostrar
+          <select id="securityRange">
+            <option value="HOY">Eventos de hoy</option>
+            <option value="7" selected>Próximos 7 días</option>
+            <option value="30">Próximos 30 días</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section>
+      <div id="securityEvents" class="security-events-grid">
+        <div class="panel"><p class="muted">Cargando eventos...</p></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="securityEventModal" class="modal-overlay hidden">
+  <div class="modal-card security-modal-card">
+    <div class="modal-header">
+      <div>
+        <h2 id="securityModalTitle">Evento</h2>
+        <p id="securityModalSubtitle" class="muted"></p>
+      </div>
+      <button id="closeSecurityModal" class="modal-close" type="button">×</button>
+    </div>
+    <div class="security-modal-body">
+      <div id="securityEventDetail"></div>
+
+      <section class="security-section">
+        <h3>Registro operativo</h3>
+        <div id="securityOperational" class="security-operational"></div>
+      </section>
+
+      <section class="security-section">
+        <h3>Lista de asistentes</h3>
+        <div id="securityGuestList"></div>
+      </section>
+
+      <section class="security-section">
+        <div class="panel-header">
+          <div>
+            <h3>Observaciones de seguridad</h3>
+            <p>Cada observación queda registrada con fecha, hora y usuario.</p>
+          </div>
+        </div>
+
+        <form id="securityObservationForm">
+          <label>
+            Nueva observación
+            <textarea id="securityObservationText" rows="3" maxlength="1500"
+              placeholder="Ej.: Ingreso normal. Sin novedades."></textarea>
+          </label>
+          <div class="form-actions security-observation-actions">
+            <button type="submit" class="btn btn-primary">Registrar observación</button>
+            <span id="securityObservationMessage" class="form-message"></span>
+          </div>
+        </form>
+
+        <div id="securityObservations" class="security-observations"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="../js/supabase.js"></script>
+<script src="../js/session.js"></script>
+<script src="../js/seguridad.js"></script>
+</body>
+</html>
