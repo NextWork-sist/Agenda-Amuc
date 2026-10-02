@@ -303,7 +303,7 @@ function renderReservas(data){
   b.innerHTML=`<table class="reservas-compact-table">
     <thead>
       <tr>
-        <th>N° reserva</th>
+        <th>N°</th>
         <th>Fecha</th>
         <th>Cliente</th>
         <th>DNI</th>
@@ -312,7 +312,7 @@ function renderReservas(data){
         <th>Total</th>
         <th>Doc</th>
         ${puedeEditar?'<th>Editar</th>':''}
-        ${esAdmin?'<th>Eliminar</th>':''}
+        ${esAdmin?'<th title="Eliminar">🗑</th>':''}
       </tr>
     </thead>
     <tbody>

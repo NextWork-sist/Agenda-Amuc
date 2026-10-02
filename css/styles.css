@@ -374,29 +374,46 @@ table td small{display:block;color:var(--muted);margin-top:4px}
 }
 .reservas-compact-table th,
 .reservas-compact-table td{
-  padding:11px 8px;
+  padding:10px 8px;
   vertical-align:middle;
   overflow-wrap:anywhere;
 }
+.reservas-compact-table th{
+  white-space:nowrap;
+}
 .reservas-compact-table th:nth-child(1),
-.reservas-compact-table td:nth-child(1){width:8%}
+.reservas-compact-table td:nth-child(1){width:6%}
 .reservas-compact-table th:nth-child(2),
 .reservas-compact-table td:nth-child(2){width:10%}
 .reservas-compact-table th:nth-child(3),
-.reservas-compact-table td:nth-child(3){width:17%}
+.reservas-compact-table td:nth-child(3){width:18%}
 .reservas-compact-table th:nth-child(4),
-.reservas-compact-table td:nth-child(4){width:10%}
+.reservas-compact-table td:nth-child(4){width:9%}
 .reservas-compact-table th:nth-child(5),
-.reservas-compact-table td:nth-child(5){width:16%}
+.reservas-compact-table td:nth-child(5){width:18%}
 .reservas-compact-table th:nth-child(6),
 .reservas-compact-table td:nth-child(6){width:11%}
 .reservas-compact-table th:nth-child(7),
-.reservas-compact-table td:nth-child(7){width:12%; white-space:nowrap}
+.reservas-compact-table td:nth-child(7){width:10%; white-space:nowrap}
 .reservas-compact-table th:nth-child(8),
-.reservas-compact-table td:nth-child(8){width:7%; text-align:center}
+.reservas-compact-table td:nth-child(8){width:6%; text-align:center; white-space:nowrap}
+.reservas-compact-table th:nth-child(9),
+.reservas-compact-table td:nth-child(9){width:8%; text-align:center; white-space:nowrap}
+.reservas-compact-table th:nth-child(10),
+.reservas-compact-table td:nth-child(10){width:4%; text-align:center; white-space:nowrap}
+.reservas-compact-table td:nth-child(8),
+.reservas-compact-table td:nth-child(9),
+.reservas-compact-table td:nth-child(10){
+  padding-left:4px;
+  padding-right:4px;
+}
 .reservas-compact-table .btn-small{
   padding:7px 8px;
   white-space:nowrap;
+}
+.reservas-compact-table .icon-btn{
+  min-width:auto;
+  padding:7px 8px;
 }
 @media(max-width:1100px){
   .reservas-compact-table{

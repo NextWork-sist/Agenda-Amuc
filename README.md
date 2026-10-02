@@ -200,3 +200,10 @@ Después crear cada usuario en Authentication y su perfil correspondiente con ro
 La tabla de Reservas registradas muestra solamente:
 N° reserva, Fecha, Cliente, DNI, Evento, Horario, Total, Doc, Editar y Eliminar.
 Se quitaron Condición, Horas y Estado para evitar desplazamiento horizontal en pantallas de escritorio.
+
+
+## V21 - Ajuste fino tabla de reservas
+- La cabecera "N° reserva" pasa a "N°".
+- Se reduce el espacio entre Total y Doc ajustando anchos de columnas.
+- La cabecera de eliminar queda solo con el ícono del cesto.
+- Se evita el salto de línea en Doc, Editar y la columna de eliminar.
