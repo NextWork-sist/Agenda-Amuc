@@ -131,6 +131,7 @@ function renderGraficos(desde,hasta,reservas,pagos){
     options:{
       responsive:true,
       maintainAspectRatio:false,
+      animation:false,
       plugins:{legend:{display:false}},
       scales:{y:{beginAtZero:true,ticks:{precision:0}}}
     }
@@ -150,6 +151,7 @@ function renderGraficos(desde,hasta,reservas,pagos){
     options:{
       responsive:true,
       maintainAspectRatio:false,
+      animation:false,
       plugins:{legend:{display:false}},
       scales:{
         y:{
@@ -178,6 +180,7 @@ function renderGraficos(desde,hasta,reservas,pagos){
     options:{
       responsive:true,
       maintainAspectRatio:false,
+      animation:false,
       plugins:{
         legend:{position:'bottom'}
       }
@@ -263,12 +266,12 @@ async function cargarReporte(){
   if(!desde||!hasta){
     msg.textContent='Seleccioná fecha desde y fecha hasta.';
     msg.className='form-message error';
-    return;
+    return null;
   }
   if(desde>hasta){
     msg.textContent='La fecha desde no puede ser posterior a la fecha hasta.';
     msg.className='form-message error';
-    return;
+    return null;
   }
 
   msg.textContent='Generando reporte...';
@@ -294,7 +297,7 @@ async function cargarReporte(){
     const e=reservasRes.error||pagosRes.error;
     msg.textContent='No se pudo generar el reporte: '+e.message;
     msg.className='form-message error';
-    return;
+    return null;
   }
 
   const reservas=reservasRes.data||[];
@@ -323,6 +326,7 @@ async function cargarReporte(){
 
   msg.textContent=`Reporte generado del ${fechaAR(desde)} al ${fechaAR(hasta)}.`;
   msg.className='form-message success';
+  return reporteActual;
 }
 
 function csvEsc(v){
@@ -368,6 +372,233 @@ function exportarCSV(){
   URL.revokeObjectURL(url);
 }
 
+
+async function cargarImagenDataURL(url){
+  const r=await fetch(url);
+  if(!r.ok)throw new Error('No se pudo cargar el logo.');
+  const blob=await r.blob();
+  return await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function resumenMediosPago(pagos){
+  const grupos={};
+  pagos.forEach(p=>{
+    const medio=normalizarMedio(p.medio_pago);
+    if(!grupos[medio])grupos[medio]={cantidad:0,total:0};
+    grupos[medio].cantidad++;
+    grupos[medio].total+=Number(p.importe||0);
+  });
+  return Object.entries(grupos).sort((a,b)=>b[1].total-a[1].total);
+}
+
+function resumenMensual(reporte){
+  const meses=rangoMeses(reporte.desde.slice(0,7),reporte.hasta.slice(0,7));
+  const alquileres=Object.fromEntries(meses.map(m=>[m,0]));
+  const recaudacion=Object.fromEntries(meses.map(m=>[m,0]));
+  reporte.reservas.forEach(r=>{
+    const k=mesClaveDesdeFecha(r.fecha);
+    if(k in alquileres)alquileres[k]++;
+  });
+  reporte.pagos.forEach(p=>{
+    const k=mesClaveDesdeTimestamp(p.fecha);
+    if(k in recaudacion)recaudacion[k]+=Number(p.importe||0);
+  });
+  return meses.map(m=>({mes:etiquetaMes(m),alquileres:alquileres[m],recaudacion:recaudacion[m]}));
+}
+
+async function generarPDFReporte(ventanaPdf=null){
+  const reporte=reporteActual;
+  if(!reporte?.desde||!reporte?.hasta){
+    if(ventanaPdf)ventanaPdf.close();
+    alert('Primero generá el reporte.');
+    return;
+  }
+
+  const {jsPDF}=window.jspdf||{};
+  if(!jsPDF){
+    if(ventanaPdf)ventanaPdf.close();
+    alert('No se pudo cargar el generador de PDF.');
+    return;
+  }
+
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pageW=doc.internal.pageSize.getWidth();
+  const pageH=doc.internal.pageSize.getHeight();
+  const margin=14;
+
+  let logo=null;
+  try{logo=await cargarImagenDataURL('../assets/logo-amuc.jpg');}catch{}
+
+  const totalContratado=reporte.reservas.reduce((s,r)=>s+Number(r.valor_total||0),0);
+  const totalCobrado=reporte.pagos.reduce((s,p)=>s+Number(p.importe||0),0);
+  const saldoPendiente=reporte.reservas.reduce((s,r)=>{
+    const pagado=(r.pagos||[]).reduce((a,p)=>a+Number(p.importe||0),0);
+    return s+Math.max(0,Number(r.valor_total||0)-pagado);
+  },0);
+
+  function encabezado(){
+    if(logo)doc.addImage(logo,'JPEG',margin,10,18,18);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(16);
+    doc.text('AMUC - Reporte del Salón de Fiestas',logo?36:margin,17);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(10);
+    doc.text(`Período: ${fechaAR(reporte.desde)} al ${fechaAR(reporte.hasta)}`,logo?36:margin,23);
+    doc.setDrawColor(190);
+    doc.line(margin,31,pageW-margin,31);
+  }
+
+  function piePaginas(){
+    const total=doc.getNumberOfPages();
+    for(let i=1;i<=total;i++){
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(110);
+      doc.text(`Página ${i} de ${total}`,pageW-margin,pageH-7,{align:'right'});
+      doc.text('Agenda AMUC - Salón de Fiestas',margin,pageH-7);
+      doc.setTextColor(0);
+    }
+  }
+
+  encabezado();
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.text('Resumen general',margin,39);
+
+  doc.autoTable({
+    startY:43,
+    margin:{left:margin,right:margin},
+    head:[['Indicador','Resultado']],
+    body:[
+      ['Cantidad de alquileres',String(reporte.reservas.length)],
+      ['Total contratado',money(totalContratado)],
+      ['Total cobrado',money(totalCobrado)],
+      ['Saldo pendiente',money(saldoPendiente)],
+    ],
+    styles:{fontSize:9,cellPadding:2.5},
+    headStyles:{fillColor:[23,59,95]},
+    columnStyles:{1:{halign:'right'}},
+  });
+
+  let y=doc.lastAutoTable.finalY+8;
+  doc.setFont('helvetica','bold');doc.setFontSize(11);
+  doc.text('Recaudación por medio de pago',margin,y);
+  y+=4;
+  const medios=resumenMediosPago(reporte.pagos);
+  doc.autoTable({
+    startY:y,
+    margin:{left:margin,right:margin},
+    head:[['Medio de pago','Operaciones','Total']],
+    body:medios.length?medios.map(([m,v])=>[m,String(v.cantidad),money(v.total)]):[['Sin cobros','0',money(0)]],
+    styles:{fontSize:9,cellPadding:2.5},
+    headStyles:{fillColor:[37,95,143]},
+    columnStyles:{1:{halign:'right'},2:{halign:'right'}},
+  });
+
+  y=doc.lastAutoTable.finalY+8;
+  doc.setFont('helvetica','bold');doc.setFontSize(11);
+  doc.text('Evolución mensual',margin,y);
+  y+=4;
+  const mensual=resumenMensual(reporte);
+  doc.autoTable({
+    startY:y,
+    margin:{left:margin,right:margin},
+    head:[['Mes','Alquileres','Recaudación']],
+    body:mensual.map(x=>[x.mes,String(x.alquileres),money(x.recaudacion)]),
+    styles:{fontSize:9,cellPadding:2.5},
+    headStyles:{fillColor:[37,95,143]},
+    columnStyles:{1:{halign:'right'},2:{halign:'right'}},
+  });
+
+  // Incorporar los gráficos visibles si están disponibles.
+  try{
+    const alquilerCanvas=document.getElementById('alquileresChart');
+    const recCanvas=document.getElementById('recaudacionChart');
+    const mediosCanvas=document.getElementById('mediosChart');
+    const charts=[
+      ['Alquileres por mes',alquilerCanvas],
+      ['Recaudación por mes',recCanvas],
+      ['Distribución por medio de pago',mediosCanvas],
+    ];
+    for(const [titulo,canvas] of charts){
+      if(!canvas)continue;
+      const img=canvas.toDataURL('image/png',1.0);
+      doc.addPage();
+      encabezado();
+      doc.setFont('helvetica','bold');doc.setFontSize(12);
+      doc.text(titulo,margin,40);
+      const maxW=pageW-margin*2;
+      const maxH=115;
+      doc.addImage(img,'PNG',margin,46,maxW,maxH);
+    }
+  }catch(err){console.warn('No se pudieron incorporar gráficos al PDF',err);}
+
+  doc.addPage();
+  encabezado();
+  doc.setFont('helvetica','bold');doc.setFontSize(11);
+  doc.text('Detalle de cobros',margin,40);
+
+  const detalle=reporte.pagos.map(p=>{
+    const r=p.reservas||{};
+    const c=r.clientes||{};
+    return [
+      fechaHoraAR(p.fecha),
+      '#'+(r.id||'-'),
+      [c.nombre,c.apellido].filter(Boolean).join(' ')||'-',
+      r.tipo_evento||'-',
+      normalizarMedio(p.medio_pago),
+      money(p.importe),
+    ];
+  });
+
+  doc.autoTable({
+    startY:45,
+    margin:{left:9,right:9,bottom:15},
+    head:[['Fecha','Reserva','Cliente','Evento','Medio','Importe']],
+    body:detalle.length?detalle:[['-','-','Sin cobros','-','-',money(0)]],
+    styles:{fontSize:7.5,cellPadding:2,overflow:'linebreak'},
+    headStyles:{fillColor:[23,59,95]},
+    columnStyles:{5:{halign:'right'}},
+    didDrawPage:()=>{},
+  });
+
+  piePaginas();
+
+  const blob=doc.output('blob');
+  const blobUrl=URL.createObjectURL(blob);
+  if(ventanaPdf && !ventanaPdf.closed){
+    ventanaPdf.location.href=blobUrl;
+  }else{
+    const nueva=window.open(blobUrl,'_blank');
+    if(!nueva){
+      const a=document.createElement('a');
+      a.href=blobUrl;
+      a.download=`Reporte_AMUC_${reporte.desde}_${reporte.hasta}.pdf`;
+      document.body.appendChild(a);a.click();a.remove();
+    }
+  }
+  setTimeout(()=>URL.revokeObjectURL(blobUrl),60000);
+}
+
+async function generarReporteYPdf(){
+  // Abrimos la pestaña inmediatamente para evitar bloqueo de popups del navegador.
+  const ventanaPdf=window.open('about:blank','_blank');
+  if(ventanaPdf){
+    ventanaPdf.document.write('<p style="font-family:Arial;padding:24px">Generando reporte PDF...</p>');
+  }
+  const r=await cargarReporte();
+  if(!r){if(ventanaPdf&&!ventanaPdf.closed)ventanaPdf.close();return;}
+  // Dar un instante a Chart.js para terminar de pintar los canvas.
+  await new Promise(resolve=>setTimeout(resolve,120));
+  await generarPDFReporte(ventanaPdf);
+}
+
 document.addEventListener('DOMContentLoaded',async()=>{
   const ctx=await requireSession();
   if(!ctx)return;
@@ -378,7 +609,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('fechaDesde').value=isoLocal(primeroAnio);
   document.getElementById('fechaHasta').value=isoLocal(hoy);
 
-  document.getElementById('generarReporteBtn').addEventListener('click',cargarReporte);
+  document.getElementById('generarReporteBtn').addEventListener('click',generarReporteYPdf);
   document.getElementById('exportarCsvBtn').addEventListener('click',exportarCSV);
 
   await cargarReporte();

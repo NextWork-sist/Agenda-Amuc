@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="../css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 <div class="app-layout">
@@ -44,7 +46,7 @@
           <input type="date" id="fechaHasta">
         </label>
         <div class="report-filter-actions">
-          <button type="button" id="generarReporteBtn" class="btn btn-primary">Generar reporte</button>
+          <button type="button" id="generarReporteBtn" class="btn btn-primary">Generar reporte PDF</button>
           <button type="button" id="exportarCsvBtn" class="btn btn-secondary">Exportar CSV</button>
         </div>
       </div>
