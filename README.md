@@ -123,3 +123,12 @@ Cambios:
 Requiere que en Supabase producción existan:
 - pagos.tipo_comprobante
 - pagos.numero_comprobante
+
+
+## V14 - Buscador de comprobantes
+En la pestaña Cobros se agregó búsqueda por número de Recibo C o Factura C.
+- acepta número completo o parcial;
+- ignora espacios, guiones, puntos y barras al comparar;
+- permite buscar con botón o tecla Enter;
+- botón Limpiar restaura todos los movimientos.
+No requiere cambios adicionales en Supabase.

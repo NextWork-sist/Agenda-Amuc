@@ -1,6 +1,7 @@
 let perfilActual = null;
 let reservasPendientes = [];
 let reservaSeleccionada = null;
+let pagosGlobal = [];
 
 function money(v){
   return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(Number(v||0));
@@ -169,6 +170,62 @@ async function borrarPago(id){
   await cargarPagos();
 }
 
+
+function normalizarNumeroComprobante(v){
+  return String(v||'')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s\-./]/g,'');
+}
+
+function renderPagos(data){
+  const b=document.getElementById('pagosTable');
+  if(!data?.length){
+    b.innerHTML='<p class="muted">No se encontraron cobros.</p>';
+    return;
+  }
+
+  const esAdmin=perfilActual?.rol==='ADMINISTRADOR';
+  b.innerHTML=`<table><thead><tr><th>Fecha</th><th>Reserva</th><th>Cliente</th><th>Concepto</th><th>Medio</th><th>Comprobante</th><th>Importe</th>${esAdmin?'<th>Acción</th>':''}</tr></thead><tbody>${data.map(p=>`<tr><td>${new Date(p.fecha).toLocaleString('es-AR')}</td><td>#${p.reservas?.id||'-'}</td><td>${p.reservas?.clientes?`${p.reservas.clientes.nombre||''} ${p.reservas.clientes.apellido||''}`:'-'}</td><td>${mapConcepto(p.concepto||'-')}</td><td>${p.medio_pago||'-'}</td><td>${mapComprobante(p.tipo_comprobante)}<small>${p.numero_comprobante||'-'}</small></td><td>${money(p.importe)}</td>${esAdmin?`<td><button class="icon-btn danger" onclick="borrarPago(${p.id})" title="Eliminar cobro">🗑</button></td>`:''}</tr>`).join('')}</tbody></table>`;
+}
+
+function buscarComprobante(){
+  const input=document.getElementById('buscarComprobante');
+  const info=document.getElementById('busquedaComprobanteInfo');
+  const q=normalizarNumeroComprobante(input?.value);
+
+  if(!q){
+    renderPagos(pagosGlobal);
+    if(info)info.textContent='Ingresá un número de recibo o factura para buscar.';
+    return;
+  }
+
+  const resultados=pagosGlobal.filter(p=>
+    normalizarNumeroComprobante(p.numero_comprobante).includes(q)
+  );
+
+  renderPagos(resultados);
+
+  if(info){
+    if(!resultados.length){
+      info.textContent='No se encontró ningún Recibo C o Factura C con ese número.';
+    }else if(resultados.length===1){
+      const p=resultados[0];
+      info.textContent=`1 comprobante encontrado: ${mapComprobante(p.tipo_comprobante)} ${p.numero_comprobante||''}.`;
+    }else{
+      info.textContent=`${resultados.length} comprobantes encontrados.`;
+    }
+  }
+}
+
+function limpiarBusquedaComprobante(){
+  const input=document.getElementById('buscarComprobante');
+  const info=document.getElementById('busquedaComprobanteInfo');
+  if(input)input.value='';
+  if(info)info.textContent='';
+  renderPagos(pagosGlobal);
+}
+
 async function cargarPagos(){
   const {data,error}=await supabaseClient
     .from('pagos')
@@ -176,10 +233,14 @@ async function cargarPagos(){
     .order('fecha',{ascending:false});
   const b=document.getElementById('pagosTable');
   if(error){b.innerHTML=`<p class="error">${error.message}</p>`;return;}
-  if(!data?.length){b.innerHTML='<p class="muted">Sin cobros.</p>';return;}
 
-  const esAdmin=perfilActual?.rol==='ADMINISTRADOR';
-  b.innerHTML=`<table><thead><tr><th>Fecha</th><th>Reserva</th><th>Cliente</th><th>Concepto</th><th>Medio</th><th>Comprobante</th><th>Importe</th>${esAdmin?'<th>Acción</th>':''}</tr></thead><tbody>${data.map(p=>`<tr><td>${new Date(p.fecha).toLocaleString('es-AR')}</td><td>#${p.reservas?.id||'-'}</td><td>${p.reservas?.clientes?`${p.reservas.clientes.nombre||''} ${p.reservas.clientes.apellido||''}`:'-'}</td><td>${mapConcepto(p.concepto||'-')}</td><td>${p.medio_pago||'-'}</td><td>${mapComprobante(p.tipo_comprobante)}<small>${p.numero_comprobante||'-'}</small></td><td>${money(p.importe)}</td>${esAdmin?`<td><button class="icon-btn danger" onclick="borrarPago(${p.id})" title="Eliminar cobro">🗑</button></td>`:''}</tr>`).join('')}</tbody></table>`;
+  pagosGlobal=data||[];
+  if(!pagosGlobal.length){
+    b.innerHTML='<p class="muted">Sin cobros.</p>';
+    return;
+  }
+
+  renderPagos(pagosGlobal);
 }
 
 document.addEventListener('DOMContentLoaded',async()=>{
@@ -190,6 +251,16 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('reserva_id').addEventListener('change',actualizarReservaSeleccionada);
   document.getElementById('concepto').addEventListener('change',actualizarImporte);
   document.getElementById('pagoForm').addEventListener('submit',guardarPago);
+
+  document.getElementById('buscarComprobanteBtn')?.addEventListener('click',buscarComprobante);
+  document.getElementById('limpiarBusquedaBtn')?.addEventListener('click',limpiarBusquedaComprobante);
+  document.getElementById('buscarComprobante')?.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      buscarComprobante();
+    }
+  });
+
   setFechaAhora();
   await cargarReservas();
   await cargarPagos();

@@ -56,7 +56,26 @@
       </form>
     </section>
 
-    <section class="panel"><div class="panel-header"><h2>Movimientos registrados</h2></div><div id="pagosTable" class="table-wrap"><p class="muted">Cargando...</p></div></section>
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Movimientos registrados</h2>
+          <p>Buscá un Recibo C o Factura C por su número de comprobante.</p>
+        </div>
+      </div>
+
+      <div class="comprobante-search-row">
+        <label>
+          Número de recibo o factura
+          <input type="text" id="buscarComprobante" placeholder="Ej.: 0001-00001234 o 1234">
+        </label>
+        <button type="button" id="buscarComprobanteBtn" class="btn btn-primary">Buscar</button>
+        <button type="button" id="limpiarBusquedaBtn" class="btn btn-secondary">Limpiar</button>
+      </div>
+      <p id="busquedaComprobanteInfo" class="field-help"></p>
+
+      <div id="pagosTable" class="table-wrap"><p class="muted">Cargando...</p></div>
+    </section>
   </main>
 </div>
 <script src="../js/supabase.js"></script><script src="../js/session.js"></script><script src="../js/pagos.js"></script>
