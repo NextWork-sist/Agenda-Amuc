@@ -107,3 +107,52 @@ table td small{display:block;color:var(--muted);margin-top:4px}
 .wa-message{max-width:78%;padding:10px 12px;border-radius:12px;margin-bottom:10px}.wa-message.incoming{background:#fff;border:1px solid var(--border);margin-right:auto}.wa-message.outgoing{background:#dfeffc;margin-left:auto}
 .wa-message-meta{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:var(--muted);margin-bottom:4px}
 @media(max-width:760px){.wa-filter-row{grid-template-columns:1fr}.whatsapp-summary{grid-template-columns:1fr 1fr}}
+
+
+/* V12 - Reportes */
+.report-filter-grid{
+  display:grid;
+  grid-template-columns:minmax(180px,240px) minmax(180px,240px) 1fr;
+  gap:16px;
+  align-items:end;
+}
+.report-filter-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:end;
+  padding-bottom:1px;
+}
+.report-stats{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+.report-charts-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+}
+.chart-box{
+  position:relative;
+  height:330px;
+}
+.chart-box-small{
+  height:300px;
+}
+.panel-header p{
+  margin:5px 0 0;
+  color:var(--muted);
+  font-size:13px;
+}
+@media(max-width:1000px){
+  .report-charts-grid{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .report-filter-grid{grid-template-columns:1fr}
+  .report-filter-actions{align-items:stretch}
+  .report-filter-actions .btn{flex:1}
+  .report-stats{grid-template-columns:1fr 1fr}
+  .chart-box{height:280px}
+}
+@media(max-width:480px){
+  .report-stats{grid-template-columns:1fr}
+}

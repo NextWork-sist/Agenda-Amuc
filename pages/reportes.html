@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda AMUC - Reportes</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="../assets/logo-amuc.jpg" alt="Logo AMUC" class="sidebar-logo">
+      <div><strong>Agenda AMUC</strong><span id="userRole">Usuario</span></div>
+    </div>
+    <nav class="nav-menu">
+      <a href="dashboard.html">Inicio</a>
+      <a href="reservas.html">Reservas</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="pagos.html">Cobros</a>
+      <a href="reportes.html" class="active">Reportes</a>
+      <a href="solicitudes-whatsapp.html">Solicitudes WhatsApp</a>
+    </nav>
+    <button id="logoutBtn" class="btn btn-ghost">Cerrar sesión</button>
+  </aside>
+
+  <main class="content">
+    <header class="topbar dashboard-header">
+      <div>
+        <h1>Reportes</h1>
+        <p>Análisis de alquileres, cobros y medios de pago.</p>
+      </div>
+      <img src="../assets/logo-amuc.jpg" alt="Logo AMUC" class="header-logo">
+    </header>
+
+    <section class="panel">
+      <div class="report-filter-grid">
+        <label>Desde
+          <input type="date" id="fechaDesde">
+        </label>
+        <label>Hasta
+          <input type="date" id="fechaHasta">
+        </label>
+        <div class="report-filter-actions">
+          <button type="button" id="generarReporteBtn" class="btn btn-primary">Generar reporte</button>
+          <button type="button" id="exportarCsvBtn" class="btn btn-secondary">Exportar CSV</button>
+        </div>
+      </div>
+      <p class="field-help">
+        Alquileres se agrupan por fecha del evento. La recaudación se agrupa por la fecha efectiva de cada cobro.
+      </p>
+      <p id="reporteMensaje" class="form-message"></p>
+    </section>
+
+    <section class="stats-grid report-stats">
+      <article class="stat-card">
+        <span>Alquileres</span>
+        <strong id="repAlquileres">0</strong>
+        <small>Eventos no cancelados en el período</small>
+      </article>
+      <article class="stat-card">
+        <span>Total contratado</span>
+        <strong id="repContratado">$ 0</strong>
+        <small>Valor de alquileres del período</small>
+      </article>
+      <article class="stat-card">
+        <span>Total cobrado</span>
+        <strong id="repCobrado">$ 0</strong>
+        <small>Cobros realizados entre las fechas elegidas</small>
+      </article>
+      <article class="stat-card">
+        <span>Saldo pendiente</span>
+        <strong id="repSaldo">$ 0</strong>
+        <small>Saldo de los alquileres del período</small>
+      </article>
+    </section>
+
+    <section class="report-charts-grid">
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Alquileres por mes</h2>
+            <p>Cantidad de eventos según fecha de reserva.</p>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="alquileresChart"></canvas></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Recaudación por mes</h2>
+            <p>Importes según fecha efectiva de cobro.</p>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="recaudacionChart"></canvas></div>
+      </article>
+    </section>
+
+    <section class="report-charts-grid">
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Recaudación por medio de pago</h2>
+            <p>Distribución del dinero cobrado en el período.</p>
+          </div>
+        </div>
+        <div class="chart-box chart-box-small"><canvas id="mediosChart"></canvas></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Detalle por medio de pago</h2>
+            <p>Cantidad de operaciones y total recaudado.</p>
+          </div>
+        </div>
+        <div id="mediosPagoTable" class="table-wrap"><p class="muted">Cargando...</p></div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Detalle de cobros</h2>
+          <p>Movimientos registrados dentro del período seleccionado.</p>
+        </div>
+      </div>
+      <div id="reportePagosTable" class="table-wrap"><p class="muted">Cargando...</p></div>
+    </section>
+  </main>
+</div>
+
+<script src="../js/supabase.js"></script>
+<script src="../js/session.js"></script>
+<script src="../js/reportes.js"></script>
+</body>
+</html>

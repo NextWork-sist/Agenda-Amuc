@@ -86,3 +86,18 @@ No requiere SQL nuevo si ya se ejecutó la política de borrado de V4.
 - Crear reserva lleva los datos disponibles a la pantalla de Reservas.
 - Dashboard muestra cantidad de solicitudes pendientes.
 - Usa las tablas WhatsApp ya creadas en Supabase. No requiere SQL nuevo.
+
+
+## V12 - Reportes
+Se agregó `pages/reportes.html` y `js/reportes.js`.
+Incluye:
+- filtro Desde / Hasta;
+- cantidad de alquileres y total contratado según fecha del evento;
+- total cobrado según fecha efectiva del pago;
+- saldo pendiente de las reservas del período;
+- discriminación por medio de pago;
+- gráficos mensuales de alquileres y recaudación;
+- gráfico de distribución por medio de pago;
+- tabla de movimientos;
+- exportación CSV.
+No requiere cambios en Supabase para esta versión.
