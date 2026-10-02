@@ -109,3 +109,17 @@ El reporte PDF quedó reducido a:
 - Página siguiente: Detalle de cobros.
 Se eliminaron del PDF las tres páginas de gráficos.
 Los gráficos continúan visibles dentro de la pestaña Reportes del sistema.
+
+
+## V13 - Factura C / Remito y comprobantes de cobro
+Cambios:
+- Clientes: si requiere factura se registra Factura C; si no requiere factura, se muestra Remito.
+- Se eliminan las opciones de Factura B en la interfaz.
+- Cobros: se agregan Tipo de comprobante (Recibo C / Factura C) y Número de comprobante.
+- Al elegir una reserva, el tipo sugerido es Factura C si el cliente requiere factura y Recibo C en caso contrario.
+- El listado de cobros y los reportes muestran tipo y número de comprobante.
+- El PDF de reportes incluye el comprobante en el detalle de cobros.
+
+Requiere que en Supabase producción existan:
+- pagos.tipo_comprobante
+- pagos.numero_comprobante

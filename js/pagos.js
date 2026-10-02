@@ -10,6 +10,10 @@ function mapConcepto(valor){
   return {SENA:'Seña',SALDO_TOTAL:'Pago total / saldo',PAGO_PARCIAL:'Pago parcial',OTRO:'Otro'}[valor] || valor;
 }
 
+function mapComprobante(valor){
+  return {RECIBO_C:'Recibo C',FACTURA_C:'Factura C'}[valor] || valor || '-';
+}
+
 function setFechaAhora(){
   const now=new Date();
   now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
@@ -25,7 +29,7 @@ async function obtenerPagosReserva(reservaId){
 async function cargarReservas(){
   const {data:reservas,error}=await supabaseClient
     .from('reservas')
-    .select('id,fecha,tipo_evento,valor_total,estado,clientes(nombre,apellido)')
+    .select('id,fecha,tipo_evento,valor_total,estado,clientes(nombre,apellido,requiere_factura)')
     .neq('estado','CANCELADA')
     .order('fecha',{ascending:true});
 
@@ -79,6 +83,11 @@ async function actualizarReservaSeleccionada(){
     <div><span>Seña requerida (50%)</span><strong>${money(senaObjetivo)}</strong></div>
     <div><span>Seña registrada</span><strong>${money(senasPagadas)}</strong></div>`;
 
+  const tipoComprobante=document.getElementById('tipo_comprobante');
+  if(tipoComprobante){
+    tipoComprobante.value=r.clientes?.requiere_factura?'FACTURA_C':'RECIBO_C';
+  }
+
   actualizarImporte();
 }
 
@@ -119,13 +128,20 @@ async function guardarPago(e){
 
   const concepto=document.getElementById('concepto').value;
   const importe=Number(document.getElementById('importe').value||0);
+  const tipoComprobante=document.getElementById('tipo_comprobante').value;
+  const numeroComprobante=document.getElementById('numero_comprobante').value.trim();
+
   if(importe<=0){msg.textContent='El importe debe ser mayor a cero.';msg.className='form-message error';return;}
   if(importe>reservaSeleccionada.saldo+0.009){msg.textContent='El importe no puede superar el saldo pendiente.';msg.className='form-message error';return;}
+  if(!tipoComprobante){msg.textContent='Seleccioná el tipo de comprobante.';msg.className='form-message error';return;}
+  if(!numeroComprobante){msg.textContent='Ingresá el número de comprobante.';msg.className='form-message error';return;}
 
   const payload={
     reserva_id:reservaSeleccionada.id,
     concepto,
     medio_pago:document.getElementById('medio_pago').value,
+    tipo_comprobante:tipoComprobante,
+    numero_comprobante:numeroComprobante,
     importe,
     fecha:document.getElementById('fecha').value?new Date(document.getElementById('fecha').value).toISOString():new Date().toISOString(),
     observaciones:document.getElementById('observaciones').value.trim()||null
@@ -156,14 +172,14 @@ async function borrarPago(id){
 async function cargarPagos(){
   const {data,error}=await supabaseClient
     .from('pagos')
-    .select('id,fecha,concepto,medio_pago,importe,reservas(id,clientes(nombre,apellido))')
+    .select('id,fecha,concepto,medio_pago,tipo_comprobante,numero_comprobante,importe,reservas(id,clientes(nombre,apellido))')
     .order('fecha',{ascending:false});
   const b=document.getElementById('pagosTable');
   if(error){b.innerHTML=`<p class="error">${error.message}</p>`;return;}
   if(!data?.length){b.innerHTML='<p class="muted">Sin cobros.</p>';return;}
 
   const esAdmin=perfilActual?.rol==='ADMINISTRADOR';
-  b.innerHTML=`<table><thead><tr><th>Fecha</th><th>Reserva</th><th>Cliente</th><th>Concepto</th><th>Medio</th><th>Importe</th>${esAdmin?'<th>Acción</th>':''}</tr></thead><tbody>${data.map(p=>`<tr><td>${new Date(p.fecha).toLocaleString('es-AR')}</td><td>#${p.reservas?.id||'-'}</td><td>${p.reservas?.clientes?`${p.reservas.clientes.nombre||''} ${p.reservas.clientes.apellido||''}`:'-'}</td><td>${mapConcepto(p.concepto||'-')}</td><td>${p.medio_pago||'-'}</td><td>${money(p.importe)}</td>${esAdmin?`<td><button class="icon-btn danger" onclick="borrarPago(${p.id})" title="Eliminar cobro">🗑</button></td>`:''}</tr>`).join('')}</tbody></table>`;
+  b.innerHTML=`<table><thead><tr><th>Fecha</th><th>Reserva</th><th>Cliente</th><th>Concepto</th><th>Medio</th><th>Comprobante</th><th>Importe</th>${esAdmin?'<th>Acción</th>':''}</tr></thead><tbody>${data.map(p=>`<tr><td>${new Date(p.fecha).toLocaleString('es-AR')}</td><td>#${p.reservas?.id||'-'}</td><td>${p.reservas?.clientes?`${p.reservas.clientes.nombre||''} ${p.reservas.clientes.apellido||''}`:'-'}</td><td>${mapConcepto(p.concepto||'-')}</td><td>${p.medio_pago||'-'}</td><td>${mapComprobante(p.tipo_comprobante)}<small>${p.numero_comprobante||'-'}</small></td><td>${money(p.importe)}</td>${esAdmin?`<td><button class="icon-btn danger" onclick="borrarPago(${p.id})" title="Eliminar cobro">🗑</button></td>`:''}</tr>`).join('')}</tbody></table>`;
 }
 
 document.addEventListener('DOMContentLoaded',async()=>{

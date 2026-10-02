@@ -32,8 +32,9 @@
             <label>Razón Social<input type="text" id="razon_social"></label>
             <label>CUIT<input type="text" id="cuit"></label>
             <label>Dirección fiscal<input type="text" id="direccion_fiscal"></label>
-            <label>Tipo de factura
-              <select id="tipo_factura"><option value="">Seleccionar</option><option value="B">Factura B</option><option value="C">Factura C</option></select>
+            <label>Comprobante
+              <input type="text" value="Factura C" readonly>
+              <input type="hidden" id="tipo_factura" value="C">
             </label>
             <label class="full">Condición frente al IVA
               <select id="condicion_iva"><option value="">Seleccionar</option><option value="Consumidor Final">Consumidor Final</option><option value="Exento">Exento</option><option value="Monotributo">Monotributo</option><option value="Responsable Inscripto">Responsable Inscripto</option></select>

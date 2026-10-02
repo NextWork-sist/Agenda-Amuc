@@ -94,6 +94,10 @@ function mapConcepto(valor){
   }[valor] || valor || '-';
 }
 
+function mapComprobante(valor){
+  return {RECIBO_C:'Recibo C',FACTURA_C:'Factura C'}[valor] || valor || '-';
+}
+
 function destruirGraficos(){
   if(chartAlquileres){chartAlquileres.destroy();chartAlquileres=null;}
   if(chartRecaudacion){chartRecaudacion.destroy();chartRecaudacion=null;}
@@ -236,6 +240,7 @@ function renderPagos(pagos){
         <th>Evento</th>
         <th>Concepto</th>
         <th>Medio</th>
+        <th>Comprobante</th>
         <th>Importe</th>
       </tr>
     </thead>
@@ -251,6 +256,7 @@ function renderPagos(pagos){
           <td>${esc(r.tipo_evento||'-')}<small>${fechaAR(r.fecha)}</small></td>
           <td>${esc(mapConcepto(p.concepto))}</td>
           <td>${esc(normalizarMedio(p.medio_pago))}</td>
+          <td>${esc(mapComprobante(p.tipo_comprobante))}<small>${esc(p.numero_comprobante||'-')}</small></td>
           <td>${money(p.importe)}</td>
         </tr>`;
       }).join('')}
@@ -287,7 +293,7 @@ async function cargarReporte(){
       .order('fecha',{ascending:true}),
     supabaseClient
       .from('pagos')
-      .select('id,fecha,concepto,medio_pago,importe,reservas(id,fecha,tipo_evento,clientes(nombre,apellido))')
+      .select('id,fecha,concepto,medio_pago,tipo_comprobante,numero_comprobante,importe,reservas(id,fecha,tipo_evento,clientes(nombre,apellido))')
       .gte('fecha',inicioDiaIso(desde))
       .lte('fecha',finDiaIso(hasta))
       .order('fecha',{ascending:false})
@@ -342,7 +348,7 @@ function exportarCSV(){
   }
 
   const rows=[
-    ['Fecha','Reserva','Cliente','Fecha evento','Evento','Concepto','Medio de pago','Importe']
+    ['Fecha','Reserva','Cliente','Fecha evento','Evento','Concepto','Medio de pago','Tipo comprobante','Número comprobante','Importe']
   ];
 
   pagos.forEach(p=>{
@@ -356,6 +362,8 @@ function exportarCSV(){
       r.tipo_evento||'',
       mapConcepto(p.concepto),
       normalizarMedio(p.medio_pago),
+      mapComprobante(p.tipo_comprobante),
+      p.numero_comprobante||'',
       Number(p.importe||0).toFixed(2)
     ]);
   });
@@ -531,6 +539,7 @@ async function generarPDFReporte(ventanaPdf=null){
       [c.nombre,c.apellido].filter(Boolean).join(' ')||'-',
       r.tipo_evento||'-',
       normalizarMedio(p.medio_pago),
+      `${mapComprobante(p.tipo_comprobante)}\n${p.numero_comprobante||'-'}`,
       money(p.importe),
     ];
   });
@@ -538,11 +547,11 @@ async function generarPDFReporte(ventanaPdf=null){
   doc.autoTable({
     startY:45,
     margin:{left:9,right:9,bottom:15},
-    head:[['Fecha','Reserva','Cliente','Evento','Medio','Importe']],
-    body:detalle.length?detalle:[['-','-','Sin cobros','-','-',money(0)]],
+    head:[['Fecha','Reserva','Cliente','Evento','Medio','Comprobante','Importe']],
+    body:detalle.length?detalle:[['-','-','Sin cobros','-','-','-',money(0)]],
     styles:{fontSize:7.5,cellPadding:2,overflow:'linebreak'},
     headStyles:{fillColor:[23,59,95]},
-    columnStyles:{5:{halign:'right'}},
+    columnStyles:{6:{halign:'right'}},
     didDrawPage:()=>{},
   });
 

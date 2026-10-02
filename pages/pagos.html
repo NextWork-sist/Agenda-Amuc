@@ -36,6 +36,16 @@
         <label>Medio de pago
           <select id="medio_pago"><option>Efectivo</option><option>Transferencia</option><option>Débito</option><option>Crédito</option><option>Mercado Pago</option><option>Otro</option></select>
         </label>
+        <label>Tipo de comprobante
+          <select id="tipo_comprobante" required>
+            <option value="RECIBO_C">Recibo C</option>
+            <option value="FACTURA_C">Factura C</option>
+          </select>
+          <small class="field-help">Se sugiere automáticamente según si el cliente requiere factura.</small>
+        </label>
+        <label>Número de comprobante
+          <input type="text" id="numero_comprobante" placeholder="Ej.: 0001-00001234" required>
+        </label>
         <label>Importe
           <input type="number" id="importe" min="0" step="0.01" required>
           <small id="importeHelp" class="field-help"></small>
