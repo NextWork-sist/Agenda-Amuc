@@ -518,8 +518,7 @@ async function loadReservas(){
   const{data,error}=await supabaseClient
     .from('reservas')
     .select('id,cliente_id,fecha,hora_inicio,hora_fin,tipo_evento,cantidad_personas,valor_total,valor_hora,estado,observaciones,tipo_usuario,cantidad_horas,clientes(id,nombre,apellido,dni,telefono,email,afiliado,requiere_factura,razon_social,cuit,direccion_fiscal,condicion_iva)')
-    .order('fecha',{ascending:false})
-    .order('hora_inicio',{ascending:false});
+    .order('id',{ascending:false});
 
   const b=document.getElementById('reservasTable');
   if(error){

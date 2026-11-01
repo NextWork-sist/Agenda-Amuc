@@ -18,6 +18,13 @@
   <main class="content">
     <header class="topbar"><div><h1>Clientes</h1><p>Administración general de clientes.</p></div><button id="toggleFormBtn" class="btn btn-primary">Nuevo cliente</button></header>
     <section id="clienteFormPanel" class="panel hidden">
+      <div id="clienteEditBanner" class="edit-mode-banner hidden">
+        <div>
+          <strong>Editando cliente <span id="clienteEditNombre"></span></strong>
+          <small>Los cambios se aplican al mismo cliente y conservan todas sus reservas asociadas.</small>
+        </div>
+        <button type="button" id="cancelarEdicionClienteBtn" class="btn btn-secondary">Cancelar edición</button>
+      </div>
       <form id="clienteForm" class="form-grid">
         <label>Nombre<input type="text" id="nombre" required></label>
         <label>Apellido<input type="text" id="apellido"></label>
@@ -42,7 +49,11 @@
           </div>
         </div>
         <label class="full">Observaciones<textarea id="observaciones" rows="3"></textarea></label>
-        <div class="full form-actions"><button class="btn btn-primary" type="submit">Guardar cliente</button><span id="clienteMessage" class="form-message"></span></div>
+        <div class="full form-actions">
+          <button id="guardarClienteBtn" class="btn btn-primary" type="submit">Guardar cliente</button>
+          <button id="cancelarEdicionClienteBtn2" class="btn btn-secondary hidden" type="button">Cancelar edición</button>
+          <span id="clienteMessage" class="form-message"></span>
+        </div>
       </form>
     </section>
     <section class="panel">
