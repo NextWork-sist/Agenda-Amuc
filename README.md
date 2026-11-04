@@ -202,8 +202,20 @@ N° reserva, Fecha, Cliente, DNI, Evento, Horario, Total, Doc, Editar y Eliminar
 Se quitaron Condición, Horas y Estado para evitar desplazamiento horizontal en pantallas de escritorio.
 
 
-## V21 - Ajuste fino tabla de reservas
-- La cabecera "N° reserva" pasa a "N°".
-- Se reduce el espacio entre Total y Doc ajustando anchos de columnas.
-- La cabecera de eliminar queda solo con el ícono del cesto.
-- Se evita el salto de línea en Doc, Editar y la columna de eliminar.
+## V22 - Orden de reservas y edición de clientes
+- Reservas registradas se ordenan por N° de reserva descendente (más nueva primero).
+- Se conserva el formato compacto: N°, Fecha, Cliente, DNI, Evento, Horario, Total, Doc, Editar y cesto.
+- Clientes incorpora botón Editar para ADMINISTRADOR y ADMINISTRACION.
+- La edición actualiza el mismo registro del cliente, por lo que conserva todas las reservas y cobros asociados.
+- Se pueden modificar nombre, apellido, DNI, teléfono, email, dirección, afiliación, facturación y observaciones.
+- No requiere cambios adicionales en Supabase.
+
+
+## V24 - Tarifas desde noviembre 2026
+- Afiliado: $70.200/h desde 01/11/2026.
+- No afiliado: $107.400/h desde 01/11/2026.
+- Reservas anteriores mantienen las tarifas anteriores ($65.000 / $99.500).
+- El SQL de migración actualiza reservas desde noviembre con saldo pendiente y respeta los pagos ya registrados.
+- Las reservas totalmente pagadas antes del cambio no se recalculan automáticamente.
+- Al editar una reserva sin cambiar fecha, horario ni condición del cliente, se conserva el valor/hora que ya tenía.
+- Ejecutar `supabase_tarifas_noviembre_2026.sql` una vez en producción.
